@@ -1,0 +1,13 @@
+# This file may be used to create an environment using:
+dash==0.35.1
+dash-html-components==0.13.4
+dash-core-components==0.42.1
+dash-renderer
+plotly
+numpy
+pandas
+flask_cors
+bson
+gunicorn
+dash-table==3.1.11
+dash-auth
