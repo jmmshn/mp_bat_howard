@@ -7,35 +7,50 @@ import numpy as np
 import json
 import plotly.graph_objs as go
 from dash.exceptions import PreventUpdate
-
+from pymongo import MongoClient
 import dash_table
 import flask
 from flask_cors import CORS
 
 import os
-src_dir = os.path.dirname(os.path.abspath(__file__))
-df = ## Populate this with db query
 
-show_fields = ['batt_id', 'average_voltage', 'capacity_grav', 'max_instability', 'text', 'delith_id',
-               'formula_discharge', 'formula_charge', 'spg_symbol', 'mineral', 'dimensionality', 'OxyGuess', 'OxyChg']
-       # 'capacity_grav', 'capacity_vol', 'energy_grav', 'energy_vol',
-       # 'formula_charge', 'formula_discharge', 'id_charge', 'id_discharge',
-       # 'max_instability', 'working_ion']
+#src_dir = os.path.dirname(os.path.abspath(__file__))
 
-df = df[show_fields]
-app = dash.Dash('Battery Explorer', url_base_pathname='/basf/')
+with open('./secrets/db_info.json') as json_file:
+    db_login = json.load(json_file)
+client = MongoClient(
+        db_login['host'],
+        username=db_login['username'],
+        password=db_login['password'],
+        authSource=db_login['database'],
+        authMechanism='SCRAM-SHA-1')
+mongo_coll = client[db_login['database']][db_login['collection']]
+
+show_fields = ['batt_id', 'average_voltage',
+               'capacity_grav',
+               'formula_charge',
+               'formula_discharge',
+               'max_instability']
+
+query = {'working_ion' : 'Ca'}
+
+# Make a query to the specific DB and Collection
+cursor = mongo_coll.find(query, show_fields)
+
+# Expand the cursor and construct the DataFrame
+df = pd.DataFrame(list(cursor))
+
+app = dash.Dash('Battery Explorer', url_base_pathname='/vw/')
 
 # Authentication
 VALID_UP = [
-    ['user',  'pass'],
+    [db_login['dash_name'],  db_login['dash_pass']],
 ]
 auth = dash_auth.BasicAuth(app, VALID_UP)
 
 server = app.server
 
 PAGE_SIZE = 20
-STARTING_ID = 'bat-40705004'
-FIGURE = None
 
 doris_dict = {  'position': 'relative',
                 'top': '0px',
@@ -148,7 +163,7 @@ def draw_figure():
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
-            text = dff['text'],
+            text = dff['batt_id'],
             hoverinfo = 'text',
             marker = dict(
                 size = 10,
@@ -222,21 +237,15 @@ def draw_table(dataframe=pd.DataFrame(), max_rows=16):
             df_disp= df.iloc[dataframe['pointIndex'].values]
             # show_fields = ['batt_id', 'average_voltage', 'capacity_grav', 'max_instability', 'text', 'delith_id',
             #    'formula_discharge', 'formula_charge', 'spg_symbol', 'mineral', 'dimensionality']
-            col_titles = ['Base ID', 'Dim', 'Charged', 'Discharged', 'Stability (eV)',
-                          'Avg. Voltage (V)', 'Capacity (mAh/g)', 'OS (Charged)', 'OS Change']
-            col_names = ['dimensionality', 'formula_charge', 'formula_discharge', 'max_instability',
-                         'average_voltage', 'capacity_grav', 'OxyChg', 'OxyGuess']
+            col_titles = ['Charged', 'Discharged', 'Stability (eV)',
+                          'Avg. Voltage (V)', 'Capacity (mAh/g)']
+            col_names = ['formula_charge', 'formula_discharge', 'max_instability',
+                         'average_voltage', 'capacity_grav']
 
             return html.Table(
                 # # Header
                 [html.Tr([html.Th(col) for col in col_titles])]+
                 [html.Tr(
-                    [html.Td(
-                        html.A(disp_variable(df_disp.iloc[i]['delith_id']),
-                               href='https://materialsproject.org/materials/{}/'.format(
-                                   disp_variable(df_disp.iloc[i]['delith_id'])),
-                               target="_blank")
-                    )]+
                     [html.Td(disp_variable(df_disp.iloc[i][col])) for col in col_names]) for i in range(min(len(df_disp), max_rows))]
                 # [[html.Tr([html.Td(df_disp.iloc[i][col]) for col in col_names])]
                 #     for i in range(min(len(df_disp), max_rows))]
@@ -342,9 +351,6 @@ def diplay_info(hoverData):
             dimension = 'N/A'
         return [
             html.Div([
-                "Deltih-ID: {}".format(hover_df['delith_id']),
-            ]),
-            html.Div([
                 "Charged: {}".format(hover_df['formula_charge']),
             ]),
             html.Div([
@@ -352,12 +358,6 @@ def diplay_info(hoverData):
             ]),
             html.Div([
                 "Dimension: {}".format(dimension),
-            ]),
-            html.Div([
-                "SPG Symbol: {}".format(hover_df['spg_symbol']),
-            ]),
-            html.Div([
-                "Base Structure: {}".format(mineral_type),
             ]),
             ]
     else:
