@@ -29,10 +29,10 @@ mongo_coll = client[db_login['database']][db_login['collection']]
 show_fields = ['batt_id', 'average_voltage',
                'capacity_grav',
                'formula_charge',
-               'formula_discharge',
+               'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
 
-query = {'working_ion' : 'Ca'}
+query = {'working_ion' : {'$in': ['Ca', 'Mg']}}
 
 # Make a query to the specific DB and Collection
 cursor = mongo_coll.find(query, show_fields)
@@ -239,21 +239,27 @@ def draw_table(dataframe=pd.DataFrame(), max_rows=16):
             #    'formula_discharge', 'formula_charge', 'spg_symbol', 'mineral', 'dimensionality']
             col_titles = ['Charged', 'Discharged', 'Stability (eV)',
                           'Avg. Voltage (V)', 'Capacity (mAh/g)']
-            col_names = ['formula_charge', 'formula_discharge', 'max_instability',
+            col_names = [ 'max_instability',
                          'average_voltage', 'capacity_grav']
 
             return html.Table(
                 # # Header
                 [html.Tr([html.Th(col) for col in col_titles])]+
                 [html.Tr(
+                    [html.Td(
+                        html.A(disp_variable(df_disp.iloc[i]['formula_charge']),
+                               href='https://materialsproject.org/materials/{}/'.format(
+                                   disp_variable(df_disp.iloc[i]['id_charge'])),
+                               target="_blank")
+                    ),
+                    html.Td(
+                        html.A(disp_variable(df_disp.iloc[i]['formula_discharge']),
+                               href='https://materialsproject.org/materials/{}/'.format(
+                                   disp_variable(df_disp.iloc[i]['id_discharge'])),
+                               target="_blank")
+                        )
+                    ]+
                     [html.Td(disp_variable(df_disp.iloc[i][col])) for col in col_names]) for i in range(min(len(df_disp), max_rows))]
-                # [[html.Tr([html.Td(df_disp.iloc[i][col]) for col in col_names])]
-                #     for i in range(min(len(df_disp), max_rows))]
-                # # Body
-                # Body
-                # [html.Tr([
-                #     'test'
-                # ] for i in range(min(len(df_disp), max_rows)))]
             )
 
 ##########################################################################
@@ -458,4 +464,4 @@ for css in external_css:
     app.css.append_css({"external_url": css})
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8051)
+    app.run_server(debug=True, port=8050)
