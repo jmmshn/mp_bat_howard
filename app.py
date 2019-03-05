@@ -8,9 +8,7 @@ import json
 import plotly.graph_objs as go
 from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
-import dash_table
 import flask
-from flask_cors import CORS
 
 import os
 
@@ -26,8 +24,8 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 
-show_fields = ['batt_id', 'average_voltage',
-               'capacity_grav',
+show_fields = ['batt_id', 'average_voltage', 'working_ion',
+               'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
@@ -40,7 +38,7 @@ cursor = mongo_coll.find(query, show_fields)
 # Expand the cursor and construct the DataFrame
 df = pd.DataFrame(list(cursor))
 
-app = dash.Dash('Battery Explorer', url_base_pathname='/vw/')
+app = dash.Dash(__name__, url_base_pathname='/vw/')
 
 # Authentication
 VALID_UP = [
@@ -238,9 +236,9 @@ def draw_table(dataframe=pd.DataFrame(), max_rows=16):
             # show_fields = ['batt_id', 'average_voltage', 'capacity_grav', 'max_instability', 'text', 'delith_id',
             #    'formula_discharge', 'formula_charge', 'spg_symbol', 'mineral', 'dimensionality']
             col_titles = ['Charged', 'Discharged', 'Stability (eV)',
-                          'Avg. Voltage (V)', 'Capacity (mAh/g)']
+                          'Avg. Voltage (V)', 'Capacity (mAh/g)', 'Energy (mW/g)']
             col_names = [ 'max_instability',
-                         'average_voltage', 'capacity_grav']
+                         'average_voltage', 'capacity_grav', 'energy_grav']
 
             return html.Table(
                 # # Header
@@ -362,9 +360,6 @@ def diplay_info(hoverData):
             html.Div([
                 "Discharged: {}".format(hover_df['formula_discharge']),
             ]),
-            html.Div([
-                "Dimension: {}".format(dimension),
-            ]),
             ]
     else:
         return None
@@ -464,4 +459,4 @@ for css in external_css:
     app.css.append_css({"external_url": css})
 
 if __name__ == '__main__':
-    app.run_server(debug=True, port=8050)
+    app.run_server(debug=True, host='0.0.0.0', port=8000)
