@@ -8,13 +8,14 @@ import json
 import plotly.graph_objs as go
 from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
+import yaml
 import flask
 
 import os
 
 #src_dir = os.path.dirname(os.path.abspath(__file__))
 
-with open('./secrets/db_info.json') as json_file:
+with open('.:secrets:db_info.json') as json_file:
     db_login = json.load(json_file)
 client = MongoClient(
         db_login['host'],
@@ -84,6 +85,11 @@ def get_app_layout():
         html.Div([
             html.Div([
                 html.Div([
+                    html.Div([
+                        'Please Eneter Query Here:',
+                        dcc.Input(id='query_string', value='''{'working_ion' : {'$in': ['Ca', 'Mg']}}''', type='text', size='30'),
+                        html.Button(id='query_button', n_clicks=0, children='Query')
+                    ]),
                     html.P(
                         'HOVER over a point in the graph to see its basic information. CLICK on a point in the graph to display it in the table below.'),
                     html.P(
@@ -103,7 +109,7 @@ def get_app_layout():
                 dcc.Graph(id='clickable-graph',
                           style=dict(width='900px'),
                           hoverData=dict(points=[dict(pointNumber=0)]),
-                          figure=draw_figure()),
+                          figure=draw_figure(df)),
             ], className='nine  columns')
         ]),
         #     html.Div([
@@ -128,15 +134,20 @@ def get_app_layout():
                 html.Div(id = 'tab_selected'),
                 #html.Div(id = 'hidden-div'),
                 html.Div(id = 'hidden-div', style = {'display': 'none'}),
+                html.Div(id='hidden_df', children='initial state')
             ], className='twelve columns')
         ], className='row'),
     ], className='container')
 
 
+html.Div(
+    id='df'
+)
+
 ##########################################################################
 # The different dynamic elements in the app each writen as a function
 ##########################################################################
-def draw_figure():
+def draw_figure(df):
     """
     Return the figure data based on some filters
     :param selected_idx:
@@ -162,6 +173,7 @@ def draw_figure():
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
             text = dff['batt_id'],
+            customdata = ['info'],
             hoverinfo = 'text',
             marker = dict(
                 size = 10,
@@ -389,14 +401,35 @@ def get_selected_data(clickData, hidden):
                         result = hidden + result
         return json.dumps(result)
 
+
 @app.callback(
-    Output('clickable-graph', 'figure'),
-    [Input('clickable-graph', 'clickData')],
-    [State('clickable-graph', 'figure'),
-     State('hidden-div', 'children')]
+    Output('hidden_df', 'children'),
+    [Input('query_button', 'n_clicks')],
+    [State('query_string', 'value'),
+     State('hidden_df', 'children')]
 )
 
-def add_new_point(clickData, figure, hidden):
+def update_dataframe(query_submit, query_string, hidden_df):
+    query_dict = yaml.load(query_string)
+    cursor = mongo_coll.find(query_dict, show_fields)
+    up_df = pd.DataFrame(list(cursor))
+    df_pass = up_df.to_dict()
+    return df_pass
+
+@app.callback(
+    Output('clickable-graph', 'figure'),
+    [Input('clickable-graph', 'clickData'),
+    Input('query_button', 'n_clicks')],
+    [State('clickable-graph', 'figure'),
+     State('hidden-div', 'children'),
+     State('hidden_df', 'children')]
+)
+
+def add_new_point(clickData, n_clicks, figure, hidden, hidden_string):
+    dataframe = pd.DataFrame.from_dict(df_pass)
+    figure['data'] = draw_figure(dataframe)['data']
+    figure['layout'] = draw_figure(dataframe)['layout']
+
     if not clickData:
         raise PreventUpdate
     result = clickData['points']
@@ -457,6 +490,7 @@ external_css = [
 
 for css in external_css:
     app.css.append_css({"external_url": css})
+
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8000)
