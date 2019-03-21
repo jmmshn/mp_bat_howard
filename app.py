@@ -134,7 +134,7 @@ def get_app_layout():
                 html.Div(id = 'tab_selected'),
                 #html.Div(id = 'hidden-div'),
                 html.Div(id = 'hidden-div', style = {'display': 'none'}),
-                html.Div(id='hidden_df', children='initial state')
+                html.Div(id='hidden_df', children='initial state', style= {'display': 'none'})
             ], className='twelve columns')
         ], className='row'),
     ], className='container')
@@ -413,22 +413,23 @@ def update_dataframe(query_submit, query_string, hidden_df):
     query_dict = yaml.load(query_string)
     cursor = mongo_coll.find(query_dict, show_fields)
     up_df = pd.DataFrame(list(cursor))
-    df_pass = up_df.to_dict()
-    return df_pass
+    red_df = up_df.drop(columns='_id')
+    return red_df.to_json()
 
 @app.callback(
     Output('clickable-graph', 'figure'),
-    [Input('clickable-graph', 'clickData'),
-    Input('query_button', 'n_clicks')],
+    [Input('clickable-graph', 'clickData')],
     [State('clickable-graph', 'figure'),
      State('hidden-div', 'children'),
      State('hidden_df', 'children')]
 )
 
-def add_new_point(clickData, n_clicks, figure, hidden, hidden_string):
-    dataframe = pd.DataFrame.from_dict(df_pass)
-    figure['data'] = draw_figure(dataframe)['data']
-    figure['layout'] = draw_figure(dataframe)['layout']
+def update_figure(clickData, figure, hidden, df_string):
+    if df_string == 'initial state':
+        dataframe = df
+    else:
+        dataframe = pd.read_json(df_string)
+    figure = draw_figure(dataframe)
 
     if not clickData:
         raise PreventUpdate
