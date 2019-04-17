@@ -10,6 +10,9 @@ from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
 import yaml
 import flask
+from chgden_fetcher import chgden_fetcher
+from path_grapher import path_grapher
+import crystal_toolkit.components as ctc
 
 import os
 
@@ -25,7 +28,7 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 
-show_fields = ['batt_id', 'average_voltage', 'working_ion',
+show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
@@ -40,6 +43,8 @@ cursor = mongo_coll.find(query, show_fields)
 df = pd.DataFrame(list(cursor))
 
 app = dash.Dash(__name__, url_base_pathname='/vw/')
+app.config['suppress_callback_exceptions']=True
+ctc.MPComponent.register_app(app)
 
 # Authentication
 VALID_UP = [
@@ -59,6 +64,12 @@ doris_dict = {  'position': 'relative',
                 'font-size': '6.0rem',
                 'color': '#4D637F'
              }
+
+test_battid = '18_Li'
+pg = path_grapher(test_battid)
+pg_component = pg.get_path_graph()
+pg_data = pg_component
+
 
 # General formatting of the app
 def get_app_layout():
@@ -131,7 +142,11 @@ def get_app_layout():
         # Row: Table
         html.Div([
             html.Div([
-                html.Div(id = 'tab_selected'),
+                html.Div(html.Div([
+                    ctc.MPComponent.all_app_stores(),  # not required in this minimal example, but usually necessary for interactivity
+                    pg_component
+                    ])),
+                html.Div(id = 'tab_selected', style={'display': 'none'}),
                 #html.Div(id = 'hidden-div'),
                 html.Div(id = 'hidden-div', style = {'display': 'none'}),
                 html.Div(id='hidden_df', children='initial state', style= {'display': 'none'})
@@ -172,7 +187,7 @@ def draw_figure(df):
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
-            text = dff['batt_id'],
+            text = dff['battid'],
             customdata = ['info'],
             hoverinfo = 'text',
             marker = dict(
@@ -214,7 +229,7 @@ def draw_dropdown():
         id='chem_dropdown',
         multi=True,
         value=[STARTING_ID],
-        options=[{'label': i, 'value': i} for i in (df['batt_id']).tolist()])
+        options=[{'label': i, 'value': i} for i in (df['battid']).tolist()])
 
 
 #def draw_table():
@@ -410,7 +425,7 @@ def get_selected_data(clickData, hidden):
 )
 
 def update_dataframe(query_submit, query_string, hidden_df):
-    query_dict = yaml.load(query_string)
+    query_dict = yaml.load(query_string, Loader=yaml.FullLoader)
     cursor = mongo_coll.find(query_dict, show_fields)
     up_df = pd.DataFrame(list(cursor))
     red_df = up_df.drop(columns='_id')
@@ -418,43 +433,46 @@ def update_dataframe(query_submit, query_string, hidden_df):
 
 @app.callback(
     Output('clickable-graph', 'figure'),
-    [Input('clickable-graph', 'clickData')],
+    [Input('clickable-graph', 'clickData'),
+    Input('query_button', 'n_clicks')],
     [State('clickable-graph', 'figure'),
      State('hidden-div', 'children'),
      State('hidden_df', 'children')]
 )
 
-def update_figure(clickData, figure, hidden, df_string):
+def update_figure(clickData, nclicks, figure, hidden, df_string):
     if df_string == 'initial state':
         dataframe = df
     else:
         dataframe = pd.read_json(df_string)
-    figure = draw_figure(dataframe)
+    new_figure = {}
+    new_figure['data'] = draw_figure(dataframe)['data']
+    new_figure['layout'] = draw_figure(dataframe)['layout']
+    new_figure['uirevision'] = df_string
 
-    if not clickData:
-        raise PreventUpdate
-    result = clickData['points']
-    if result[0]['curveNumber'] != 1:
-        raise PreventUpdate
-    #print('figure', figure['data'][0]['x'])
-    if hidden:
-        hidden=json.loads(hidden)
-    else:
-        hidden=[]
-
-    if hidden==[]:
-        figure['data'][0]['x']=[result[0]['x']]
-        figure['data'][0]['y']=[result[0]['y']]
-        return figure
-
-    for pt in result:
-        if pt in hidden:
-            figure['data'][0]['x'].remove(pt['x'])
-            figure['data'][0]['y'].remove(pt['y'])
+    if clickData:
+        result = clickData['points']
+        if result[0]['curveNumber'] != 1:
+            raise PreventUpdate
+        #print('figure', figure['data'][0]['x'])
+        if hidden:
+            hidden=json.loads(hidden)
         else:
-            figure['data'][0]['x'].append(pt['x'])
-            figure['data'][0]['y'].append(pt['y'])
-    return figure
+            hidden=[]
+
+        if hidden==[]:
+            figure['data'][0]['x']=[result[0]['x']]
+            figure['data'][0]['y']=[result[0]['y']]
+            return new_figure
+
+        for pt in result:
+            if pt in hidden:
+                figure['data'][0]['x'].remove(pt['x'])
+                figure['data'][0]['y'].remove(pt['y'])
+            else:
+                figure['data'][0]['x'].append(pt['x'])
+                figure['data'][0]['y'].append(pt['y'])
+    return new_figure
 
 
     #print('hidden', hidden)
