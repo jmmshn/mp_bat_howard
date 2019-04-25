@@ -5,9 +5,11 @@ import crystal_toolkit.components as ctc
 import numpy as np
 from skimage import measure
 from crystal_toolkit.helpers.scene import *
+import dash
 
 
 class path_grapher():
+
     def __init__(self, battid):
         self.battid = battid
         cgf = chgden_fetcher(battid)
@@ -78,8 +80,10 @@ class path_grapher():
 
         test_scene = [Scene("test", contents=add_content)]
 
-        struct_component = ctc.StructureMoleculeComponent(
-            exp_struct, scene_additions=test_scene, hide_incomplete_bonds=True
-        )
 
-        return struct_component.standard_layout
+        #struct_component = ctc.StructureMoleculeComponent(
+            #exp_struct, scene_additions=test_scene, hide_incomplete_bonds=True
+        #)
+
+
+        return exp_struct, test_scene

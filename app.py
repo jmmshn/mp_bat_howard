@@ -28,7 +28,7 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 
-show_fields = ['battid', 'average_voltage', 'working_ion',
+show_fields = ['batt_id', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
@@ -44,7 +44,6 @@ df = pd.DataFrame(list(cursor))
 
 app = dash.Dash(__name__, url_base_pathname='/vw/')
 app.config['suppress_callback_exceptions']=True
-ctc.MPComponent.register_app(app)
 
 # Authentication
 VALID_UP = [
@@ -65,10 +64,13 @@ doris_dict = {  'position': 'relative',
                 'color': '#4D637F'
              }
 
-test_battid = '18_Li'
-pg = path_grapher(test_battid)
-pg_component = pg.get_path_graph()
-pg_data = pg_component
+test_batt_id = '18_Li'
+pg = path_grapher(test_batt_id)
+pg_result = pg.get_path_graph()
+pg_component = ctc.StructureMoleculeComponent(
+            pg_result[0], scene_additions=pg_result[1], hide_incomplete_bonds=True
+        )
+pg_layout = html.Div(pg_component.all_layouts["struct"], style={"width": "75vw", "height": "75vh"})
 
 
 # General formatting of the app
@@ -122,7 +124,16 @@ def get_app_layout():
                           hoverData=dict(points=[dict(pointNumber=0)]),
                           figure=draw_figure(df)),
             ], className='nine  columns')
-        ]),
+        ], className='row'),
+        #Row: Path graph
+        html.Div(
+            [html.Div(children='Migration Path Graph')
+        ], className='row'),
+        html.Div(
+            [html.Div([
+                    ctc.MPComponent.all_app_stores(),
+                    pg_layout])
+        ], className='row'),
         #     html.Div([
         #         dcc.RadioItems(
         #             id='charts_radio',
@@ -142,13 +153,13 @@ def get_app_layout():
         # Row: Table
         html.Div([
             html.Div([
-                html.Div(html.Div([
-                    ctc.MPComponent.all_app_stores(),  # not required in this minimal example, but usually necessary for interactivity
-                    pg_component
-                    ])),
+                #html.Div(html.Div([
+                    #ctc.MPComponent.all_app_stores(),  # not required in this minimal example, but usually necessary for interactivity
+                    #pg_component
+                    #])),
                 html.Div(id = 'tab_selected', style={'display': 'none'}),
                 #html.Div(id = 'hidden-div'),
-                html.Div(id = 'hidden-div', style = {'display': 'none'}),
+                html.Div(id = 'hidden-div'),#, style = {'display': 'none'}),
                 html.Div(id='hidden_df', children='initial state', style= {'display': 'none'})
             ], className='twelve columns')
         ], className='row'),
@@ -184,10 +195,17 @@ def draw_figure(df):
                        color='rgb(231, 99, 250)',
                    )
                 ),
+        #Second layer is the selected data for cross effect
+        go.Scatter(mode='text',
+                   x=[],
+                   y=[],
+                   hoverinfo='none',
+                   text='x',
+                ),
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
-            text = dff['battid'],
+            text = dff['batt_id'],
             customdata = ['info'],
             hoverinfo = 'text',
             marker = dict(
@@ -229,7 +247,7 @@ def draw_dropdown():
         id='chem_dropdown',
         multi=True,
         value=[STARTING_ID],
-        options=[{'label': i, 'value': i} for i in (df['battid']).tolist()])
+        options=[{'label': i, 'value': i} for i in (df['batt_id']).tolist()])
 
 
 #def draw_table():
@@ -395,26 +413,26 @@ def diplay_info(hoverData):
     Output('hidden-div', 'children'),
     [Input('clickable-graph', 'clickData')],
     [State('hidden-div', 'children')])
+
 def get_selected_data(clickData, hidden):
-    if clickData is not None:
-        result = clickData['points']
+    if clickData:
+        click = clickData['points'][0]
         #print('prv', hidden)
-        if result[0]['curveNumber'] != 1:
-            hidden = json.loads(hidden)
-            return json.dumps(hidden)
+        if not hidden:
+            result_list = [click]
+            print(result_list)
+            return json.dumps(result_list)
 
         if hidden:
-            hidden = json.loads(hidden)
-            if hidden is not None:
-                for pt in result:
-                    if pt in hidden:
-                        # remove
-                        hidden.remove(pt)
-                        result = hidden
-                    else:
-                        #add
-                        result = hidden + result
-        return json.dumps(result)
+            result_list = json.loads(hidden)
+            print(result_list)
+            if click in result_list:
+                # remove
+                result_list.remove(click)
+            else:
+                #add
+                result_list.append(click)
+            return json.dumps(result_list)
 
 
 @app.callback(
@@ -451,29 +469,26 @@ def update_figure(clickData, nclicks, figure, hidden, df_string):
     new_figure['uirevision'] = df_string
 
     if clickData:
-        result = clickData['points']
-        if result[0]['curveNumber'] != 1:
+        click = clickData['points'][0]
+        if click['curveNumber'] != 1:
             raise PreventUpdate
         #print('figure', figure['data'][0]['x'])
         if hidden:
-            hidden=json.loads(hidden)
+            table=json.loads(hidden)
         else:
-            hidden=[]
+            table=[]
 
-        if hidden==[]:
-            figure['data'][0]['x']=[result[0]['x']]
-            figure['data'][0]['y']=[result[0]['y']]
-            return new_figure
-
-        for pt in result:
-            if pt in hidden:
-                figure['data'][0]['x'].remove(pt['x'])
-                figure['data'][0]['y'].remove(pt['y'])
-            else:
-                figure['data'][0]['x'].append(pt['x'])
-                figure['data'][0]['y'].append(pt['y'])
-    return new_figure
-
+        if click in table:
+            new_figure['data'][0]['x'] = click['x']
+            new_figure['data'][0]['y'] = click['y']
+            for others in table[0::-2]:
+                new_figure['data'][1]['x'].append(others['x'])
+                new_figure['data'][1]['y'].append(others['y'])
+        else:
+            for others in table:
+                new_figure['data'][1]['x'].append(others['x'])
+                new_figure['data'][1]['y'].append(others['y'])
+        return new_figure
 
     #print('hidden', hidden)
     #raise PreventUpdate
