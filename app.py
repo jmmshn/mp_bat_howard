@@ -10,6 +10,9 @@ from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
 import yaml
 import flask
+from chgden_fetcher import chgden_fetcher
+from path_grapher import path_grapher
+import crystal_toolkit.components as ctc
 
 import os
 
@@ -40,6 +43,7 @@ cursor = mongo_coll.find(query, show_fields)
 df = pd.DataFrame(list(cursor))
 
 app = dash.Dash(__name__, url_base_pathname='/vw/')
+app.config['suppress_callback_exceptions']=True
 
 # Authentication
 VALID_UP = [
@@ -59,6 +63,15 @@ doris_dict = {  'position': 'relative',
                 'font-size': '6.0rem',
                 'color': '#4D637F'
              }
+
+test_batt_id = '18_Li'
+pg = path_grapher(test_batt_id)
+pg_result = pg.get_path_graph()
+pg_component = ctc.StructureMoleculeComponent(
+            pg_result[0], scene_additions=pg_result[1], hide_incomplete_bonds=True
+        )
+pg_layout = html.Div(pg_component.all_layouts["struct"], style={"width": "75vw", "height": "75vh"})
+
 
 # General formatting of the app
 def get_app_layout():
@@ -111,7 +124,16 @@ def get_app_layout():
                           hoverData=dict(points=[dict(pointNumber=0)]),
                           figure=draw_figure(df)),
             ], className='nine  columns')
-        ]),
+        ], className='row'),
+        #Row: Path graph
+        html.Div(
+            [html.Div(children='Migration Path Graph')
+        ], className='row'),
+        html.Div(
+            [html.Div([
+                    ctc.MPComponent.all_app_stores(),
+                    pg_layout])
+        ], className='row'),
         #     html.Div([
         #         dcc.RadioItems(
         #             id='charts_radio',
@@ -131,9 +153,13 @@ def get_app_layout():
         # Row: Table
         html.Div([
             html.Div([
-                html.Div(id = 'tab_selected'),
+                #html.Div(html.Div([
+                    #ctc.MPComponent.all_app_stores(),  # not required in this minimal example, but usually necessary for interactivity
+                    #pg_component
+                    #])),
+                html.Div(id = 'tab_selected', style={'display': 'none'}),
                 #html.Div(id = 'hidden-div'),
-                html.Div(id = 'hidden-div', style = {'display': 'none'}),
+                html.Div(id = 'hidden-div'),#, style = {'display': 'none'}),
                 html.Div(id='hidden_df', children='initial state', style= {'display': 'none'})
             ], className='twelve columns')
         ], className='row'),
@@ -168,6 +194,13 @@ def draw_figure(df):
                        size = 13,
                        color='rgb(231, 99, 250)',
                    )
+                ),
+        #Second layer is the selected data for cross effect
+        go.Scatter(mode='text',
+                   x=[],
+                   y=[],
+                   hoverinfo='none',
+                   text='x',
                 ),
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
@@ -380,26 +413,26 @@ def diplay_info(hoverData):
     Output('hidden-div', 'children'),
     [Input('clickable-graph', 'clickData')],
     [State('hidden-div', 'children')])
+
 def get_selected_data(clickData, hidden):
-    if clickData is not None:
-        result = clickData['points']
+    if clickData:
+        click = clickData['points'][0]
         #print('prv', hidden)
-        if result[0]['curveNumber'] != 1:
-            hidden = json.loads(hidden)
-            return json.dumps(hidden)
+        if not hidden:
+            result_list = [click]
+            print(result_list)
+            return json.dumps(result_list)
 
         if hidden:
-            hidden = json.loads(hidden)
-            if hidden is not None:
-                for pt in result:
-                    if pt in hidden:
-                        # remove
-                        hidden.remove(pt)
-                        result = hidden
-                    else:
-                        #add
-                        result = hidden + result
-        return json.dumps(result)
+            result_list = json.loads(hidden)
+            print(result_list)
+            if click in result_list:
+                # remove
+                result_list.remove(click)
+            else:
+                #add
+                result_list.append(click)
+            return json.dumps(result_list)
 
 
 @app.callback(
@@ -410,7 +443,7 @@ def get_selected_data(clickData, hidden):
 )
 
 def update_dataframe(query_submit, query_string, hidden_df):
-    query_dict = yaml.load(query_string)
+    query_dict = yaml.load(query_string, Loader=yaml.FullLoader)
     cursor = mongo_coll.find(query_dict, show_fields)
     up_df = pd.DataFrame(list(cursor))
     red_df = up_df.drop(columns='_id')
@@ -418,44 +451,44 @@ def update_dataframe(query_submit, query_string, hidden_df):
 
 @app.callback(
     Output('clickable-graph', 'figure'),
-    [Input('clickable-graph', 'clickData')],
+    [Input('clickable-graph', 'clickData'),
+    Input('query_button', 'n_clicks')],
     [State('clickable-graph', 'figure'),
      State('hidden-div', 'children'),
      State('hidden_df', 'children')]
 )
 
-def update_figure(clickData, figure, hidden, df_string):
+def update_figure(clickData, nclicks, figure, hidden, df_string):
     if df_string == 'initial state':
         dataframe = df
     else:
         dataframe = pd.read_json(df_string)
-    figure = draw_figure(dataframe)
+    new_figure = {}
+    new_figure['data'] = draw_figure(dataframe)['data']
+    new_figure['layout'] = draw_figure(dataframe)['layout']
+    new_figure['uirevision'] = df_string
 
-    if not clickData:
-        raise PreventUpdate
-    result = clickData['points']
-    if result[0]['curveNumber'] != 1:
-        raise PreventUpdate
-    #print('figure', figure['data'][0]['x'])
-    if hidden:
-        hidden=json.loads(hidden)
-    else:
-        hidden=[]
-
-    if hidden==[]:
-        figure['data'][0]['x']=[result[0]['x']]
-        figure['data'][0]['y']=[result[0]['y']]
-        return figure
-
-    for pt in result:
-        if pt in hidden:
-            figure['data'][0]['x'].remove(pt['x'])
-            figure['data'][0]['y'].remove(pt['y'])
+    if clickData:
+        click = clickData['points'][0]
+        if click['curveNumber'] != 1:
+            raise PreventUpdate
+        #print('figure', figure['data'][0]['x'])
+        if hidden:
+            table=json.loads(hidden)
         else:
-            figure['data'][0]['x'].append(pt['x'])
-            figure['data'][0]['y'].append(pt['y'])
-    return figure
+            table=[]
 
+        if click in table:
+            new_figure['data'][0]['x'] = click['x']
+            new_figure['data'][0]['y'] = click['y']
+            for others in table[0::-2]:
+                new_figure['data'][1]['x'].append(others['x'])
+                new_figure['data'][1]['y'].append(others['y'])
+        else:
+            for others in table:
+                new_figure['data'][1]['x'].append(others['x'])
+                new_figure['data'][1]['y'].append(others['y'])
+        return new_figure
 
     #print('hidden', hidden)
     #raise PreventUpdate
