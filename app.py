@@ -15,7 +15,7 @@ import os
 
 #src_dir = os.path.dirname(os.path.abspath(__file__))
 
-with open('.:secrets:db_info.json') as json_file:
+with open('./secrets/db_info.json') as json_file:
     db_login = json.load(json_file)
 client = MongoClient(
         db_login['host'],
@@ -25,7 +25,7 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 
-show_fields = ['batt_id', 'average_voltage', 'working_ion',
+show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
@@ -40,12 +40,6 @@ cursor = mongo_coll.find(query, show_fields)
 df = pd.DataFrame(list(cursor))
 
 app = dash.Dash(__name__, url_base_pathname='/vw/')
-
-# Authentication
-VALID_UP = [
-    [db_login['dash_name'],  db_login['dash_pass']],
-]
-auth = dash_auth.BasicAuth(app, VALID_UP)
 
 server = app.server
 
@@ -172,7 +166,7 @@ def draw_figure(df):
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
-            text = dff['batt_id'],
+            text = dff['battid'],
             customdata = ['info'],
             hoverinfo = 'text',
             marker = dict(
@@ -214,7 +208,7 @@ def draw_dropdown():
         id='chem_dropdown',
         multi=True,
         value=[STARTING_ID],
-        options=[{'label': i, 'value': i} for i in (df['batt_id']).tolist()])
+        options=[{'label': i, 'value': i} for i in (df['battid']).tolist()])
 
 
 #def draw_table():
@@ -245,7 +239,7 @@ def draw_dropdown():
 def draw_table(dataframe=pd.DataFrame(), max_rows=16):
         if not dataframe.empty:
             df_disp= df.iloc[dataframe['pointIndex'].values]
-            # show_fields = ['batt_id', 'average_voltage', 'capacity_grav', 'max_instability', 'text', 'delith_id',
+            # show_fields = ['battid', 'average_voltage', 'capacity_grav', 'max_instability', 'text', 'delith_id',
             #    'formula_discharge', 'formula_charge', 'spg_symbol', 'mineral', 'dimensionality']
             col_titles = ['Charged', 'Discharged', 'Stability (eV)',
                           'Avg. Voltage (V)', 'Capacity (mAh/g)', 'Energy (mW/g)']
@@ -413,6 +407,7 @@ def update_dataframe(query_submit, query_string, hidden_df):
     query_dict = yaml.load(query_string)
     cursor = mongo_coll.find(query_dict, show_fields)
     up_df = pd.DataFrame(list(cursor))
+    print(up_df)
     df_pass = up_df.to_dict()
     return df_pass
 
