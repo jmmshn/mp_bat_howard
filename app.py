@@ -10,8 +10,6 @@ from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
 import yaml
 import flask
-from chgden_fetcher import chgden_fetcher
-from path_grapher import path_grapher
 import crystal_toolkit.components as ctc
 
 import os
@@ -63,14 +61,6 @@ doris_dict = {  'position': 'relative',
                 'font-size': '6.0rem',
                 'color': '#4D637F'
              }
-
-test_batt_id = '18_Li'
-pg = path_grapher(test_batt_id)
-pg_result = pg.get_path_graph()
-pg_component = ctc.StructureMoleculeComponent(
-            pg_result[0], scene_additions=pg_result[1], hide_incomplete_bonds=True
-        )
-pg_layout = html.Div(pg_component.all_layouts["struct"], style={"width": "75vw", "height": "75vh"})
 
 
 # General formatting of the app
@@ -131,8 +121,8 @@ def get_app_layout():
         ], className='row'),
         html.Div(
             [html.Div([
-                    ctc.MPComponent.all_app_stores(),
-                    pg_layout])
+                    #ctc.MPComponent.all_app_stores(),
+                    #pg_layout])
         ], className='row'),
         #     html.Div([
         #         dcc.RadioItems(
@@ -151,12 +141,7 @@ def get_app_layout():
         #     ], className='nine columns', style=dict(textAlign='center'))
         # ]),
         # Row: Table
-        html.Div([
-            html.Div([
-                #html.Div(html.Div([
-                    #ctc.MPComponent.all_app_stores(),  # not required in this minimal example, but usually necessary for interactivity
-                    #pg_component
-                    #])),
+
                 html.Div(id = 'tab_selected', style={'display': 'none'}),
                 #html.Div(id = 'hidden-div'),
                 html.Div(id = 'hidden-div'),#, style = {'display': 'none'}),

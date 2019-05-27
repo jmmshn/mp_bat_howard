@@ -3,8 +3,54 @@
   <component name="ChangeListManager">
     <list default="true" id="2dfe092e-a9b5-4d7f-98fa-df9c702d7357" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/path_grapher.py" beforeDir="false" afterPath="$PROJECT_DIR$/path_grapher.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chgden_fetcher.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/GraphComponent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/JSONViewComponent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/Simple3DSceneComponent.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/_imports_.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/bonding_graph.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/core.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/download.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/favorites.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/json.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/literature.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/magnetism.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/phase_diagram.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/pourbaix.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/propnet.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/robocrys.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/search.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/structure.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/summary.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/symmetry.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/autooxistatedecoration.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/core.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/grainboundary.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/primitive.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/slab.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/transformations/supercell.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/upload.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/components/xrd.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/crystal_toolkit.dev.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/crystal_toolkit.min.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/inputs.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/jupyter.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/layouts.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/scene.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/utils.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/helpers/view.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/metadata.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/crystal_toolkit/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/intsitecomp.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/path_grapher.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -16,47 +62,49 @@
     <session id="-1112446447">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="18" />
+          <entry key="project.closed" value="24" />
           <entry key="project.open.time.0" value="1" />
-          <entry key="project.open.time.1" value="2" />
+          <entry key="project.open.time.1" value="3" />
+          <entry key="project.open.time.10" value="1" />
           <entry key="project.open.time.4" value="2" />
-          <entry key="project.open.time.5" value="8" />
+          <entry key="project.open.time.5" value="9" />
           <entry key="project.open.time.6" value="2" />
+          <entry key="project.open.time.7" value="2" />
           <entry key="project.open.time.8" value="1" />
-          <entry key="project.open.time.9" value="2" />
-          <entry key="project.opened" value="18" />
+          <entry key="project.open.time.9" value="4" />
+          <entry key="project.opened" value="25" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="7" />
+          <entry key="py" value="10" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="6" />
+          <entry key="Python" value="9" />
           <entry key="Scratch" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="3990" />
+          <entry key="py" value="4287" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="3990" />
+          <entry key="Python" value="4287" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1236">
-              <caret line="427" column="29" selection-start-line="427" selection-start-column="29" selection-end-line="427" selection-end-column="29" />
+            <state relative-caret-position="352">
+              <caret line="26" column="65" lean-forward="true" selection-start-line="18" selection-end-line="26" selection-end-column="65" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
               </folding>
@@ -64,49 +112,32 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/crystal_toolkit/components/structure.py">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/fetch_path.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1156">
-              <caret line="116" selection-start-line="116" selection-end-line="116" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/intsitecomp.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1241">
-              <caret line="85" column="14" selection-start-line="85" selection-start-column="9" selection-end-line="85" selection-end-column="14" />
+            <state relative-caret-position="1050">
+              <caret line="256" lean-forward="true" selection-start-line="256" selection-end-line="256" />
               <folding>
-                <element signature="e#0#64#0" expanded="true" />
+                <element signature="e#0#40#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/chgden_fetcher.py">
+        <entry file="file://$USER_HOME$/uw/crystaltoolkit/crystal_toolkit/components/structure.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="204">
-              <caret line="17" selection-start-line="17" selection-end-line="17" />
-              <folding>
-                <element signature="e#0#36#0" expanded="true" />
-                <marker date="1554419444011" expanded="true" signature="1051:1056" ph="..." />
-              </folding>
+            <state relative-caret-position="19573">
+              <caret line="1225" selection-start-line="1225" selection-end-line="1225" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/path_grapher.py">
+        <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/core/sites.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="935">
-              <caret line="62" selection-start-line="62" selection-end-line="62" />
-              <folding>
-                <element signature="e#0#41#0" expanded="true" />
-                <marker date="1556054602755" expanded="true" signature="258:263" ph="..." />
-              </folding>
+            <state relative-caret-position="826">
+              <caret line="78" selection-start-line="78" selection-end-line="78" />
             </state>
           </provider>
         </entry>
@@ -130,8 +161,8 @@
       <find>structuregraph</find>
       <find>yam</find>
       <find>print</find>
-      <find>pg</find>
       <find>battid</find>
+      <find>pg</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -143,12 +174,15 @@
         <option value="$PROJECT_DIR$/chgden_fetcher.py" />
         <option value="$PROJECT_DIR$/intsitecomp.py" />
         <option value="$PROJECT_DIR$/path_grapher.py" />
+        <option value="$USER_HOME$/uw/crystaltoolkit/crystal_toolkit/components/structure.py" />
         <option value="$PROJECT_DIR$/app.py" />
+        <option value="$PROJECT_DIR$/fetch_path.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="23" />
+    <option name="x" value="-1703" />
+    <option name="y" value="-201" />
     <option name="width" value="1280" />
     <option name="height" value="777" />
   </component>
@@ -224,15 +258,15 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1280" height="777" extended-state="0" />
+    <frame x="-1703" y="-201" width="1280" height="777" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.09330144" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.09330144" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.26576576" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.24894515" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -253,9 +287,9 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/path_grapher.py</url>
-          <line>74</line>
-          <option name="timeStamp" value="1" />
+          <url>file://$USER_HOME$/uw/crystaltoolkit/crystal_toolkit/components/structure.py</url>
+          <line>1225</line>
+          <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
@@ -269,51 +303,40 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/crystal_toolkit/components/structure.py" />
+    <entry file="file://$PROJECT_DIR$/intsitecomp.py" />
+    <entry file="file://$PROJECT_DIR$/chgden_fetcher.py" />
+    <entry file="file://$PROJECT_DIR$/path_grapher.py" />
     <entry file="file://$PROJECT_DIR$/app.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1236">
-          <caret line="427" column="29" selection-start-line="427" selection-start-column="29" selection-end-line="427" selection-end-column="29" />
+        <state relative-caret-position="352">
+          <caret line="26" column="65" lean-forward="true" selection-start-line="18" selection-end-line="26" selection-end-column="65" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/crystal_toolkit/components/structure.py">
+    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/core/sites.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1156">
-          <caret line="116" selection-start-line="116" selection-end-line="116" />
+        <state relative-caret-position="826">
+          <caret line="78" selection-start-line="78" selection-end-line="78" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/intsitecomp.py">
+    <entry file="file://$USER_HOME$/uw/crystaltoolkit/crystal_toolkit/components/structure.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1241">
-          <caret line="85" column="14" selection-start-line="85" selection-start-column="9" selection-end-line="85" selection-end-column="14" />
-          <folding>
-            <element signature="e#0#64#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="19573">
+          <caret line="1225" selection-start-line="1225" selection-end-line="1225" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/chgden_fetcher.py">
+    <entry file="file://$PROJECT_DIR$/fetch_path.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="204">
-          <caret line="17" selection-start-line="17" selection-end-line="17" />
+        <state relative-caret-position="1050">
+          <caret line="256" lean-forward="true" selection-start-line="256" selection-end-line="256" />
           <folding>
-            <element signature="e#0#36#0" expanded="true" />
-            <marker date="1554419444011" expanded="true" signature="1051:1056" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/path_grapher.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="935">
-          <caret line="62" selection-start-line="62" selection-end-line="62" />
-          <folding>
-            <element signature="e#0#41#0" expanded="true" />
-            <marker date="1556054602755" expanded="true" signature="258:263" ph="..." />
+            <element signature="e#0#40#0" expanded="true" />
           </folding>
         </state>
       </provider>
