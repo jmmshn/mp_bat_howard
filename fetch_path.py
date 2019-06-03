@@ -252,5 +252,6 @@ class fetch_path:
         self.get_mg_info(self.batt_id)
         self.reduce_exp_sgo()
         all_simple_paths = self.get_all_simple_paths()
-        info = self.lowest_chg_path(all_simple_paths)
-        return info
+        exp_index_path = self.lowest_chg_path(all_simple_paths)
+        ori_index_path = [self.trace_index(i) for i in exp_index_path]
+        return [exp_index_path, ori_index_path]
