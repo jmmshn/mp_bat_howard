@@ -6,15 +6,12 @@ import pandas as pd
 import numpy as np
 import json
 import plotly.graph_objs as go
-from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
 import yaml
-import flask
 import crystal_toolkit.components as ctc
+from fetch_path import fetch_path
+import warnings
 
-import os
-
-#src_dir = os.path.dirname(os.path.abspath(__file__))
 
 with open('.:secrets:db_info.json') as json_file:
     db_login = json.load(json_file)
@@ -26,19 +23,20 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 
-show_fields = ['batt_id', 'average_voltage', 'working_ion',
+show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
 
-query = {'working_ion' : {'$in': ['Ca', 'Mg']}}
+query = {'working_ion' : {'$in': ['Li']}}
 
 # Make a query to the specific DB and Collection
 cursor = mongo_coll.find(query, show_fields)
 
 # Expand the cursor and construct the DataFrame
 df = pd.DataFrame(list(cursor))
+
 
 app = dash.Dash(__name__, url_base_pathname='/vw/')
 app.config['suppress_callback_exceptions']=True
@@ -61,6 +59,7 @@ doris_dict = {  'position': 'relative',
                 'font-size': '6.0rem',
                 'color': '#4D637F'
              }
+
 
 
 # General formatting of the app
@@ -90,7 +89,7 @@ def get_app_layout():
                 html.Div([
                     html.Div([
                         'Please Eneter Query Here:',
-                        dcc.Input(id='query_string', value='''{'working_ion' : {'$in': ['Ca', 'Mg']}}''', type='text', size='30'),
+                        dcc.Input(id='query_string', value='''{'working_ion' : {'$in': ['Li']}}''', type='text', size='30'),
                         html.Button(id='query_button', n_clicks=0, children='Query')
                     ]),
                     html.P(
@@ -120,32 +119,20 @@ def get_app_layout():
             [html.Div(children='Migration Path Graph')
         ], className='row'),
         html.Div(
-            [html.Div([
-                    #ctc.MPComponent.all_app_stores(),
-                    #pg_layout])
+            [html.Div(get_path_graph('439_Li'), id='path-graph', style = {"width": "75vw", "height": "75vh"})
         ], className='row'),
-        #     html.Div([
-        #         dcc.RadioItems(
-        #             id='charts_radio',
-        #             options=[
-        #                 dict(label='3D Scatter', value='scatter3d'),
-        #                 dict(label='2D Scatter', value='scatter'),
-        #             ],
-        #             labelStyle=dict(display='inline'),
-        #             value='scatter'
-        #         ),
-        #         dcc.Graph(id='clickable-graph',
-        #                   style=dict(width='600px'),
-        #                   hoverData=dict(points=[dict(pointNumber=0)]),
-        #                   figure=FIGURE),
-        #     ], className='nine columns', style=dict(textAlign='center'))
-        # ]),
-        # Row: Table
-
+        #ids should work: 12240_Li, 439_Li
+        #tables and hidden divs
+        html.Div([
+            html.Div([
                 html.Div(id = 'tab_selected', style={'display': 'none'}),
                 #html.Div(id = 'hidden-div'),
-                html.Div(id = 'hidden-div'),#, style = {'display': 'none'}),
-                html.Div(id='hidden_df', children='initial state', style= {'display': 'none'})
+                html.Div(id = 'hidden-div',
+                         #, style = {'display': 'none'}),
+                         ),
+                html.Div(id='hidden_df', children='initial state', style= {'display': 'none'}),
+                html.Div(id='current_selection',
+                         )
             ], className='twelve columns')
         ], className='row'),
     ], className='container')
@@ -176,21 +163,15 @@ def draw_figure(df):
                    y = [],
                    hoverinfo = 'none',
                    marker = dict(
-                       size = 13,
-                       color='rgb(231, 99, 250)',
+                       size = 15,
+                       #color='rgb(231, 99, 250)',
+                       color='rgb(0, 0, 0)'
                    )
-                ),
-        #Second layer is the selected data for cross effect
-        go.Scatter(mode='text',
-                   x=[],
-                   y=[],
-                   hoverinfo='none',
-                   text='x',
                 ),
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
-            text = dff['batt_id'],
+            text = dff['battid'],
             customdata = ['info'],
             hoverinfo = 'text',
             marker = dict(
@@ -212,6 +193,7 @@ def draw_figure(df):
             x = xx,
             y = yy_900, line=dict(color = colors[0], dash='dash'))
     ]
+
     layout = go.Layout(
         width = 700,
         height = 700,
@@ -223,7 +205,7 @@ def draw_figure(df):
             range=[0.9,5], title='Voltage (V)'
         ),
         showlegend=False,
-        hovermode = 'closest'
+        hovermode = 'closest',
     )
     return dict(data=data, layout=layout)
 
@@ -232,42 +214,26 @@ def draw_dropdown():
         id='chem_dropdown',
         multi=True,
         value=[STARTING_ID],
-        options=[{'label': i, 'value': i} for i in (df['batt_id']).tolist()])
+        options=[{'label': i, 'value': i} for i in (df['battid']).tolist()])
 
-
-#def draw_table():
-#    return dash_table.DataTable(
-#            id='table-selection',
-#            columns=[
-#                {"name": i, "id": i} for i in df.columns
-#            ],
-#            pagination_mode='be',
-#            pagination_settings={
-#                'current_page': 0,
-#                'page_size': PAGE_SIZE
-#            },
-#
-#            filtering='be',
-#            filtering_settings='',
-#
-#            sorting='be',
-#            sorting_type='multi',
-#            sorting_settings=[],
-#            data=df.to_dict('rows'),
-#            row_selectable='multi',
-#            selected_rows=[],
-            # We don't need the data field here since it will be populated in the callback
-#        )
-
+def get_path_graph(batt_id):
+    path = fetch_path(batt_id)
+    path_info = path.get_primary_path_info()
+    add_scene = path_info[2]
+    base_ent = path.base_ent
+    smc = ctc.StructureMoleculeComponent(
+        base_ent.structure,
+        hide_incomplete_bonds=True,
+        bonded_sites_outside_unit_cell=False,
+        scene_additions=add_scene)
+    return smc.all_layouts["struct"]
 
 def draw_table(dataframe=pd.DataFrame(), max_rows=16):
         if not dataframe.empty:
             df_disp= df.iloc[dataframe['pointIndex'].values]
-            # show_fields = ['batt_id', 'average_voltage', 'capacity_grav', 'max_instability', 'text', 'delith_id',
-            #    'formula_discharge', 'formula_charge', 'spg_symbol', 'mineral', 'dimensionality']
             col_titles = ['Charged', 'Discharged', 'Stability (eV)',
                           'Avg. Voltage (V)', 'Capacity (mAh/g)', 'Energy (mW/g)']
-            col_names = [ 'max_instability',
+            col_names = ['max_instability',
                          'average_voltage', 'capacity_grav', 'energy_grav']
 
             return html.Table(
@@ -319,59 +285,15 @@ def dfRowFromHover(hoverData):
             firstPoint = hoverData['points'][0]
             if 'pointNumber' in firstPoint:
                 point_number = firstPoint['pointNumber']
-                # molecule_name = str(
-                #     FIGURE['data'][0]['text'][point_number]).strip()
                 return df.iloc[point_number]
     return pd.Series()
 
-##########################################################################
-#  Connections between the various interactive components
-##########################################################################
-
-# @app.callback(
-#     Output('table-selection', "data"),
-#     [Input('table-selection', "pagination_settings"),
-#      Input('table-selection', "sorting_settings"),
-#      Input('table-selection', "filtering_settings")])
-# def update_table(pagination_settings, sorting_settings, filtering_settings):
-#     filtering_expressions = filtering_settings.split(' && ')
-#     dff = df
-#     for filter in filtering_expressions:
-#         if ' eq ' in filter:
-#             col_name = filter.split(' eq ')[0]
-#             filter_value = filter.split(' eq ')[1]
-#             dff = dff.loc[dff[col_name] == filter_value]
-#         if ' > ' in filter:
-#             col_name = filter.split(' > ')[0]
-#             filter_value = float(filter.split(' > ')[1])
-#             dff = dff.loc[dff[col_name] > filter_value]
-#         if ' < ' in filter:
-#             col_name = filter.split(' < ')[0]
-#             filter_value = float(filter.split(' < ')[1])
-#             dff = dff.loc[dff[col_name] < filter_value]
-#
-#     if len(sorting_settings):
-#         dff = dff.sort_values(
-#             [col['column_id'] for col in sorting_settings],
-#             ascending=[
-#                 col['direction'] == 'asc'
-#                 for col in sorting_settings
-#             ],
-#             inplace=False
-#         )
-#
-#     rows_dict = dff.iloc[
-#            pagination_settings['current_page']*pagination_settings['page_size']:
-#            (pagination_settings['current_page'] + 1)*pagination_settings['page_size']
-#            ].to_dict('rows')
-#     # we only need to shown these points right before
-#     rows_dict = [sigfigsdict(d) for d in rows_dict]
-#     return rows_dict
-
+#callback functions
 
 @app.callback(
     Output('mat_info', 'children'),
-    [Input('clickable-graph', 'hoverData')])
+    [Input('clickable-graph', 'hoverData')]
+)
 def diplay_info(hoverData):
     if hoverData:
         hover_df = dfRowFromHover(hoverData)
@@ -395,9 +317,19 @@ def diplay_info(hoverData):
         return None
 
 @app.callback(
+    Output('current_selection', 'children'),
+    [Input('clickable-graph', 'clickData')]
+)
+def update_current_selection(clickData):
+    if clickData:
+        return json.dumps(clickData)
+
+@app.callback(
     Output('hidden-div', 'children'),
     [Input('clickable-graph', 'clickData')],
-    [State('hidden-div', 'children')])
+    [State('hidden-div', 'children')
+     ]
+)
 
 def get_selected_data(clickData, hidden):
     if clickData:
@@ -405,12 +337,10 @@ def get_selected_data(clickData, hidden):
         #print('prv', hidden)
         if not hidden:
             result_list = [click]
-            print(result_list)
             return json.dumps(result_list)
 
         if hidden:
             result_list = json.loads(hidden)
-            print(result_list)
             if click in result_list:
                 # remove
                 result_list.remove(click)
@@ -426,13 +356,16 @@ def get_selected_data(clickData, hidden):
     [State('query_string', 'value'),
      State('hidden_df', 'children')]
 )
-
 def update_dataframe(query_submit, query_string, hidden_df):
     query_dict = yaml.load(query_string, Loader=yaml.FullLoader)
+    print(query_dict)
     cursor = mongo_coll.find(query_dict, show_fields)
     up_df = pd.DataFrame(list(cursor))
-    red_df = up_df.drop(columns='_id')
-    return red_df.to_json()
+    if not up_df.empty:
+        red_df = up_df.drop(columns='_id')
+        return red_df.to_json()
+    else:
+        warnings.warn('Query had no results!')
 
 @app.callback(
     Output('clickable-graph', 'figure'),
@@ -440,9 +373,9 @@ def update_dataframe(query_submit, query_string, hidden_df):
     Input('query_button', 'n_clicks')],
     [State('clickable-graph', 'figure'),
      State('hidden-div', 'children'),
-     State('hidden_df', 'children')]
+     State('hidden_df', 'children')
+     ]
 )
-
 def update_figure(clickData, nclicks, figure, hidden, df_string):
     if df_string == 'initial state':
         dataframe = df
@@ -451,39 +384,58 @@ def update_figure(clickData, nclicks, figure, hidden, df_string):
     new_figure = {}
     new_figure['data'] = draw_figure(dataframe)['data']
     new_figure['layout'] = draw_figure(dataframe)['layout']
-    new_figure['uirevision'] = df_string
+    new_figure['layout']['uirevision'] = df_string
 
     if clickData:
         click = clickData['points'][0]
-        if click['curveNumber'] != 1:
-            raise PreventUpdate
-        #print('figure', figure['data'][0]['x'])
+
         if hidden:
-            table=json.loads(hidden)
+            table = json.loads(hidden)
         else:
             table=[]
 
-        if click in table:
-            new_figure['data'][0]['x'] = click['x']
-            new_figure['data'][0]['y'] = click['y']
-            for others in table[0::-2]:
-                new_figure['data'][1]['x'].append(others['x'])
-                new_figure['data'][1]['y'].append(others['y'])
-        else:
-            for others in table:
-                new_figure['data'][1]['x'].append(others['x'])
-                new_figure['data'][1]['y'].append(others['y'])
-        return new_figure
+        if click not in table:
+            new_figure['layout']['shapes'] = [
+                {
+                'type': 'line',
+                'x0': click['x'] - 7,
+                'y0': click['y'],
+                'x1': click['x'] + 7,
+                'y1': click['y'],
+                'line': {
+                    'width': 3,
+                    'color': 'rgb(360, 360, 360)'
+                }
+            },
+                {
+                'type': 'line',
+                'x0': click['x'],
+                'y0': click['y'] + 0.05,
+                'x1': click['x'],
+                'y1': click['y'] + 0.05,
+                'line': {
+                    'width': 3,
+                    'color': 'rgb(360, 360, 360)'
+                },
+            },
+        ]
+            table.append(click)
+            for all_selected in table:
+                new_figure['data'][0]['x']+=tuple([all_selected['x']])
+                new_figure['data'][0]['y']+=tuple([all_selected['y']])
 
-    #print('hidden', hidden)
-    #raise PreventUpdate
-    # if not hidden:
-    #     figure['data'][0]['x'].append(result[0]['x'])
-    #     figure['data'][0]['y'].append(result[0]['y'])
-    #     return figure
-    # figure['data'][0]['x']=[pt['x'] for pt in hidden]
-    # figure['data'][0]['y']=[pt['y'] for pt in hidden]
-    # return figure
+        elif click in table:
+            print('cancelled click', click)
+            table.remove(click)
+            print(table)
+            for others in table:
+                new_figure['data'][0]['x']+=tuple([others['x']])
+                new_figure['data'][0]['y']+=tuple([others['y']])
+
+    else:
+        print('No clickData')
+    return new_figure
+
 
 
 @app.callback(
@@ -500,6 +452,16 @@ def display_selected_data(points):
         if result is not None:
             #print(pd.DataFrame(result))
             return draw_table(pd.DataFrame(result))
+
+#@app.callback(
+#    Output('path-graph', 'children'),
+#    [Input('clickable-graph', 'clickData')]
+#)
+#def graph_path(clickData):
+#    if clickData:
+#        selectionInfo = clickData['points'][0]
+#        battid = selectionInfo['text']
+#        return get_path_graph(battid)
 
 
 external_css = [

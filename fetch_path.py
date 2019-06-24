@@ -16,11 +16,13 @@ import json
 from monty.serialization import MontyDecoder
 import numpy as np
 import networkx as nx
+from icecream import ic
+import warnings
 
 with open('.:secrets:db_info.json') as json_file:
     db_login = json.load(json_file)
 
-elec = MongoStore("js_cathodes", "concat_elec_vw",
+elec = MongoStore("js_cathodes", "concat_elec_basf",
                   host=db_login['host'],
                   username=db_login['username'],
                   password=db_login['password'],
@@ -51,8 +53,9 @@ compat = MaterialsProjectCompatibility('Advanced')
 
 class fetch_path:
 
-    def __init__(self, batt_id):
-        self.batt_id = batt_id
+    def __init__(self, battid, w_ion='Li'):
+        self.battid = battid
+        self.w_ion = w_ion
 
     def get_aeccar_from_store(self, tstore, task_id):
         """
@@ -84,8 +87,8 @@ class fetch_path:
         aeccar2 = json.loads(chgcar_json, cls=MontyDecoder)
         return aeccar0 + aeccar2
 
-    def get_mg_info(self, batt_id):
-        mat_ids = elec.query_one({'battid': batt_id})['material_ids']
+    def get_mg_info(self, battid):
+        mat_ids = elec.query_one({'battid': battid})['material_ids']
         mat_ids = list(map(int, mat_ids))
         base_ent = None
         insert_ent = []
@@ -104,10 +107,7 @@ class fetch_path:
                 base_ent = entry
             elif entry.structure.num_sites == min_cnt + 1:
                 insert_ent.append(entry)
-        base_ent
-        display_struct(base_ent.structure)
-        for ent in insert_ent:
-            display_struct(ent.structure)
+        self.base_ent = base_ent
         t_ids = list(
             map(int,
                 material.query_one({'task_id': base_ent.entry_id})['task_ids']))
@@ -123,58 +123,26 @@ class fetch_path:
         cep = ComputedEntryPath(
             base_ent,
             single_cat_entries=insert_ent,
-            migrating_specie='Mg',
+            migrating_specie=self.w_ion,
             base_aeccar=aeccar,
-            max_path_length=4.0)
+            max_path_length=6)
+        self.cep = cep
+        if len(self.cep.full_sites.sites) < 2:
+            warnings.warn('ComputedEntryPath only found one site!')
         cep.populate_edges_with_chg_density_info()
         ipos_epos_chg = list([(d['ipos'], d['epos'], d['chg_total'])
                               for u, v, d in cep.s_graph.graph.edges(data=True)])
-        print(ipos_epos_chg)
+        self.ipos_epos_chg = ipos_epos_chg
         uv = list([(u, v) for u, v, d in cep.s_graph.graph.edges(data=True)])
+        self.uv = uv
         max_chg = np.max([itr[2] for itr in ipos_epos_chg])
         min_chg = np.min([itr[2] for itr in ipos_epos_chg])
         cmap = plt.cm.YlOrRd
+        self.cmap=cmap
         norm = matplotlib.colors.Normalize(vmin=min_chg, vmax=max_chg)
-        print("Vminmax:  ", min_chg, max_chg)
+        self.norm=norm
         # All paths in a given material
-        res_struct = base_ent.structure.copy()
-        add_scene = []
-        hop_colors = []
-        hop_colors.extend(colors_hex)
-        c_dict = {}
-        uniq_engs = list(
-            set([
-                ipos.properties['inserted_energy'] for ipos in cep.full_sites.sites
-            ]))
-        for itr_site, ipos in enumerate(cep.full_sites.sites):
-            new_pos = np.array([
-                itr_dir - 1 if abs(itr_dir - 1) < 0.01 else itr_dir
-                for itr_dir in ipos.frac_coords
-            ])
-            pos0 = np.dot(new_pos - 0.5,
-                          cep.base_struct_entry.structure.lattice.matrix).tolist()
-            c_val = None
-            for it_c, eng in enumerate(uniq_engs):
-                if eng == ipos.properties['inserted_energy']:
-                    c_val = it_c
-            c_dict.update({itr_site: colors_hex[c_val]})
-            add_scene.append(Spheres([pos0], color=colors_hex[c_val], radius=0.6))
 
-        for itr_hop, (ipos, epos, chg) in enumerate(ipos_epos_chg):
-            pos0 = np.dot(ipos - 0.5, base_ent.structure.lattice.matrix).tolist()
-            pos1 = np.dot(epos - 0.5, base_ent.structure.lattice.matrix).tolist()
-            if max(ipos) >= 1 or min(ipos) <= 0:
-                add_scene.append(
-                    Spheres([pos0], color=c_dict[uv[itr_hop][0]], radius=0.6))
-            if max(epos) >= 1 or min(epos) <= 0:
-                add_scene.append(
-                    Spheres([pos1], color=c_dict[uv[itr_hop][1]], radius=0.6))
-
-            itr_color = matplotlib.colors.rgb2hex(cmap(norm(chg)))
-            hop_colors.append(itr_color)
-            add_scene.append(Cylinders([[pos0, pos1]], radius=0.4, color=itr_color))
-            res_struct.insert(0, 'Mg', ipos)
-            res_struct.insert(0, 'Mg', epos)
         self.sgo = cep.s_graph
         self.ipos_epos_chg = ipos_epos_chg
 
@@ -214,7 +182,6 @@ class fetch_path:
             converted_one_step = self.trace_index(n)
             converted_path.append(converted_one_step)
         return converted_path
-
     def get_all_simple_paths(self):
         simple_paths = []
         for ini_index in range(0, 2):
@@ -248,10 +215,58 @@ class fetch_path:
             print('No Simple Path available')
             return None
 
+    def get_add_scene(self):
+        cep = self.cep
+        base_ent = self.base_ent
+        ipos_epos_chg = self.ipos_epos_chg
+        uv = self.uv
+        cmap = self.cmap
+        norm=self.norm
+        res_struct = base_ent.structure.copy()
+        add_scene = []
+        hop_colors = []
+        hop_colors.extend(colors_hex)
+        c_dict = {}
+        uniq_engs = list(
+            set([
+                ipos.properties['inserted_energy'] for ipos in cep.full_sites.sites
+            ]))
+        for itr_site, ipos in enumerate(cep.full_sites.sites):
+            new_pos = np.array([
+                itr_dir - 1 if abs(itr_dir - 1) < 0.01 else itr_dir
+                for itr_dir in ipos.frac_coords
+            ])
+            pos0 = np.dot(new_pos - 0.5,
+                          cep.base_struct_entry.structure.lattice.matrix).tolist()
+            c_val = None
+            for it_c, eng in enumerate(uniq_engs):
+                if eng == ipos.properties['inserted_energy']:
+                    c_val = it_c
+            c_dict.update({itr_site: colors_hex[c_val]})
+            add_scene.append(Spheres([pos0], color=colors_hex[c_val], radius=0.6))
+
+        for itr_hop, (ipos, epos, chg) in enumerate(ipos_epos_chg):
+            pos0 = np.dot(ipos - 0.5, base_ent.structure.lattice.matrix).tolist()
+            pos1 = np.dot(epos - 0.5, base_ent.structure.lattice.matrix).tolist()
+            if max(ipos) >= 1 or min(ipos) <= 0:
+                add_scene.append(
+                    Spheres([pos0], color=c_dict[uv[itr_hop][0]], radius=0.6))
+            if max(epos) >= 1 or min(epos) <= 0:
+                add_scene.append(
+                    Spheres([pos1], color=c_dict[uv[itr_hop][1]], radius=0.6))
+
+            itr_color = matplotlib.colors.rgb2hex(cmap(norm(chg)))
+            hop_colors.append(itr_color)
+            add_scene.append(Spheres([[pos0, pos1]], radius=0.4, color=itr_color))
+            res_struct.insert(0, self.w_ion, ipos)
+            res_struct.insert(0, self.w_ion, epos)
+        return add_scene
+
     def get_primary_path_info(self):
-        self.get_mg_info(self.batt_id)
+        self.get_mg_info(self.battid)
         self.reduce_exp_sgo()
         all_simple_paths = self.get_all_simple_paths()
         exp_index_path = self.lowest_chg_path(all_simple_paths)
         ori_index_path = [self.trace_index(i) for i in exp_index_path]
-        return [exp_index_path, ori_index_path]
+        add_scene = self.get_add_scene()
+        return [exp_index_path, ori_index_path, add_scene]
