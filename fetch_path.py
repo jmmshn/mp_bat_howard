@@ -1,6 +1,5 @@
 from pymatgen import MPRester, Structure
 from crystal_toolkit.components.structure import StructureMoleculeComponent
-from crystal_toolkit.helpers.pythreejs_adapter import display_struct, display_StructureMoleculeComponent
 from pymatgen_diffusion.neb.full_path_mapper import ComputedEntryPath
 from matplotlib import pyplot as plt
 from maggma.stores import MongoStore
@@ -8,16 +7,18 @@ from maggma.advanced_stores import MongograntStore
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.entries.compatibility import MaterialsProjectCompatibility
 import matplotlib
-from crystal_toolkit.helpers.scene import Spheres, Cylinders, Cubes
+from crystal_toolkit.core.scene import Spheres, Cylinders, Cubes
 from matplotlib.colors import rgb2hex
 import gridfs
 import zlib
 import json
+import pprint
 from monty.serialization import MontyDecoder
 import numpy as np
 import networkx as nx
 from icecream import ic
 import warnings
+from pymatgen_diffusion.neb import get_migration_path as gmp
 
 with open('.:secrets:db_info.json') as json_file:
     db_login = json.load(json_file)
@@ -57,94 +58,14 @@ class fetch_path:
         self.battid = battid
         self.w_ion = w_ion
 
-    def get_aeccar_from_store(self, tstore, task_id):
-        """
-        Read the AECCAR grid_fs data into a Chgcar object
-        :param tstore: MongoStore for the tasks database
-        :param task_id: The id of the material entry
-        :return: pymatgen Chrgcar object
-        """
-        tstore.connect()
-        m_task = tstore.query_one({'task_id': task_id})
-        try:
-            fs_id = m_task['calcs_reversed'][0]['aeccar0_fs_id']
-        except:
-            logger.info('AECCAR0 Missing from task #'.format(task_id))
-            return None
 
-        fs = gridfs.GridFS(tstore.collection.database, 'aeccar0_fs')
-        chgcar_json = zlib.decompress(fs.get(fs_id).read())
-        aeccar0 = json.loads(chgcar_json, cls=MontyDecoder)
-
-        try:
-            fs_id = m_task['calcs_reversed'][0]['aeccar2_fs_id']
-        except:
-            logger.info('AECCAR2 Missing from task #'.format(task_id))
-            return None
-
-        fs = gridfs.GridFS(tstore.collection.database, 'aeccar2_fs')
-        chgcar_json = zlib.decompress(fs.get(fs_id).read())
-        aeccar2 = json.loads(chgcar_json, cls=MontyDecoder)
-        return aeccar0 + aeccar2
-
-    def get_mg_info(self, battid):
-        mat_ids = elec.query_one({'battid': battid})['material_ids']
-        mat_ids = list(map(int, mat_ids))
-        base_ent = None
-        insert_ent = []
-        q = {'task_id': {'$in': mat_ids}}
-
-        min_cnt = min([cc['nsites'] for cc in material.query(q)])
-        for cc in material.query(q):
-            struct = Structure.from_dict(cc['structure'])
-            entry = ComputedStructureEntry(
-                structure=struct,
-                energy=cc['thermo']['energy'],
-                parameters=cc['calc_settings'],
-                entry_id=cc['task_id'])
-            entry = compat.process_entry(entry)
-            if entry.structure.num_sites == min_cnt:
-                base_ent = entry
-            elif entry.structure.num_sites == min_cnt + 1:
-                insert_ent.append(entry)
-        self.base_ent = base_ent
-        t_ids = list(
-            map(int,
-                material.query_one({'task_id': base_ent.entry_id})['task_ids']))
-        aec_id = tasks.query_one({
-            'task_id': {
-                '$in': t_ids
-            },
-            'calcs_reversed.0.aeccar0_fs_id': {
-                '$exists': 1
-            }
-        })['task_id']
-        aeccar = self.get_aeccar_from_store(tasks, aec_id)
-        cep = ComputedEntryPath(
-            base_ent,
-            single_cat_entries=insert_ent,
-            migrating_specie=self.w_ion,
-            base_aeccar=aeccar,
-            max_path_length=6)
-        self.cep = cep
-        if len(self.cep.full_sites.sites) < 2:
-            warnings.warn('ComputedEntryPath only found one site!')
-        cep.populate_edges_with_chg_density_info()
-        ipos_epos_chg = list([(d['ipos'], d['epos'], d['chg_total'])
-                              for u, v, d in cep.s_graph.graph.edges(data=True)])
-        self.ipos_epos_chg = ipos_epos_chg
-        uv = list([(u, v) for u, v, d in cep.s_graph.graph.edges(data=True)])
-        self.uv = uv
-        max_chg = np.max([itr[2] for itr in ipos_epos_chg])
-        min_chg = np.min([itr[2] for itr in ipos_epos_chg])
-        cmap = plt.cm.YlOrRd
-        self.cmap=cmap
-        norm = matplotlib.colors.Normalize(vmin=min_chg, vmax=max_chg)
-        self.norm=norm
-        # All paths in a given material
-
-        self.sgo = cep.s_graph
-        self.ipos_epos_chg = ipos_epos_chg
+    def get_cep_info(self, battid):
+        grouped_entries = gmp.get_ent_from_db(elec, material, tasks, batt_id=battid, working_ion=self.w_ion, ltol=0.5, stol=0.7, angle_tol=5)
+        inserted_entries = [insert['inserted'][0] for insert in grouped_entries]
+        gmp_info = gmp.get_cep_from_group(grouped_entries[0]['base'], inserted_entries, working_ion=self.w_ion, tasks_store=tasks, material=material, ltol=0.5, stol=0.7, angle_tol=5)
+        self.cep = gmp_info[0]
+        self.sgo = self.cep.s_graph
+        self.ipos_epos_chg = gmp_info[1]
 
     def reduce_exp_sgo(self):
         self.exp_sgo = self.sgo * [2, 2, 2]  # get the expanded cell
@@ -202,6 +123,9 @@ class fetch_path:
                     for hop_data in hop_info[1]:
                         fore_order = np.concatenate((hop_data[0], hop_data[1]), axis=0)
                         reverse_order = np.concatenate((hop_data[1], hop_data[0]), axis=0)
+                        print('step' ,step_coords)
+                        print('fore' ,fore_order)
+                        #print('reverse', reverse_order)
                         if np.allclose(step_coords, fore_order) or np.allclose(step_coords, reverse_order):
                             step_chg = hop_data[2]
                             break
@@ -215,7 +139,7 @@ class fetch_path:
             print('No Simple Path available')
             return None
 
-    def get_add_scene(self):
+    def get_add_scene(self, ori_index_path=None):
         cep = self.cep
         base_ent = self.base_ent
         ipos_epos_chg = self.ipos_epos_chg
@@ -263,10 +187,10 @@ class fetch_path:
         return add_scene
 
     def get_primary_path_info(self):
-        self.get_mg_info(self.battid)
+        self.get_cep_info(self.battid)
         self.reduce_exp_sgo()
         all_simple_paths = self.get_all_simple_paths()
         exp_index_path = self.lowest_chg_path(all_simple_paths)
         ori_index_path = [self.trace_index(i) for i in exp_index_path]
-        add_scene = self.get_add_scene()
+        add_scene = self.get_add_scene(ori_index_path)
         return [exp_index_path, ori_index_path, add_scene]

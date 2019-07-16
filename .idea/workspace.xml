@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="2dfe092e-a9b5-4d7f-98fa-df9c702d7357" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/mp_bat_howard.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/mp_bat_howard.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/fetch_path.py" beforeDir="false" afterPath="$PROJECT_DIR$/fetch_path.py" afterDir="false" />
@@ -18,29 +16,29 @@
     <session id="-1112446447">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="33" />
+          <entry key="project.closed" value="37" />
           <entry key="project.open.time.0" value="1" />
           <entry key="project.open.time.1" value="3" />
           <entry key="project.open.time.10" value="1" />
           <entry key="project.open.time.4" value="3" />
-          <entry key="project.open.time.5" value="12" />
-          <entry key="project.open.time.6" value="3" />
+          <entry key="project.open.time.5" value="16" />
+          <entry key="project.open.time.6" value="4" />
           <entry key="project.open.time.7" value="4" />
           <entry key="project.open.time.8" value="2" />
           <entry key="project.open.time.9" value="4" />
-          <entry key="project.opened" value="33" />
+          <entry key="project.opened" value="38" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="json" value="1" />
-          <entry key="py" value="14" />
+          <entry key="py" value="21" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="JSON" value="1" />
-          <entry key="Python" value="13" />
+          <entry key="Python" value="20" />
           <entry key="Scratch" value="1" />
         </counts>
       </usages-collector>
@@ -48,39 +46,52 @@
         <counts>
           <entry key="Python Console" value="2" />
           <entry key="json" value="3" />
-          <entry key="py" value="8317" />
+          <entry key="py" value="10800" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="JSON" value="3" />
-          <entry key="Python" value="8319" />
+          <entry key="Python" value="10802" />
         </counts>
       </usages-collector>
     </session>
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="916">
-              <caret line="390" lean-forward="true" selection-start-line="390" selection-end-line="390" />
+            <state relative-caret-position="3417">
+              <caret line="213" selection-start-line="213" selection-end-line="213" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
-                <marker date="1561403182628" expanded="true" signature="10956:11159" ph="..." />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/fetch_path.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1713">
+              <caret line="102" column="30" selection-start-line="102" selection-start-column="12" selection-end-line="102" selection-end-column="30" />
+              <folding>
+                <element signature="e#0#40#0" expanded="true" />
+                <marker date="1563310951014" expanded="true" signature="2179:2699" ph="..." />
+                <marker date="1563310951014" expanded="true" signature="6182:8190" ph="..." />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/fetch_path.py">
+        <entry file="file://$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/get_migration_path.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="272">
-              <caret line="16" column="18" selection-start-line="16" selection-start-column="18" selection-end-line="16" selection-end-column="18" />
+            <state relative-caret-position="-1388">
+              <caret line="114" column="18" lean-forward="true" selection-start-line="114" selection-start-column="18" selection-end-line="114" selection-end-column="18" />
               <folding>
-                <marker date="1559853873161" expanded="true" signature="8989:10997" ph="..." />
+                <element signature="e#0#50#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -97,18 +108,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>structuregraph</find>
-      <find>yam</find>
-      <find>print</find>
-      <find>battid</find>
-      <find>pg</find>
-      <find>ice</find>
-      <find>base</find>
-      <find>display</find>
-      <find>dispay</find>
-      <find>ipos_epos_chg</find>
-      <find>camp</find>
-      <find>cmap</find>
       <find>sphere</find>
       <find>batt</find>
       <find>min_chg</find>
@@ -125,8 +124,20 @@
       <find>cubes</find>
       <find>ic</find>
       <find>current</find>
-      <find>Li</find>
       <find>warn</find>
+      <find>hidden-df</find>
+      <find>hidden_df</find>
+      <find>get_df</find>
+      <find>draw_table</find>
+      <find>display</find>
+      <find>find_op</find>
+      <find>get_devi</find>
+      <find>Li</find>
+      <find>tasks_st</find>
+      <find>get_aec</find>
+      <find>base_with</find>
+      <find>base_entry</find>
+      <find>ipos</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -140,15 +151,17 @@
         <option value="$PROJECT_DIR$/path_grapher.py" />
         <option value="$USER_HOME$/uw/crystaltoolkit/crystal_toolkit/components/structure.py" />
         <option value="$PROJECT_DIR$/.:secrets:db_info.json" />
-        <option value="$PROJECT_DIR$/fetch_path.py" />
         <option value="$PROJECT_DIR$/app.py" />
+        <option value="$PROJECT_DIR$/cath_scripts/cath_base.py" />
+        <option value="$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/get_migration_path.py" />
+        <option value="$PROJECT_DIR$/fetch_path.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
     <option name="y" value="23" />
-    <option name="width" value="1920" />
-    <option name="height" value="1057" />
+    <option name="width" value="1280" />
+    <option name="height" value="777" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -223,15 +236,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="23" width="1920" height="1057" extended-state="6" />
-    <editor active="true" />
+    <frame x="0" y="23" width="1280" height="777" extended-state="0" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.20972887" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32882884" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.3255814" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.3228228" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3993994" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -272,7 +284,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$USER_HOME$/uw/crystaltoolkit/crystal_toolkit/components/structure.py</url>
-          <line>1225</line>
+          <line>1095</line>
           <option name="timeStamp" value="2" />
         </line-breakpoint>
       </breakpoints>
@@ -280,13 +292,6 @@
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
-    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/analysis/local_env.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="327">
-          <caret line="3233" column="35" selection-start-line="3233" selection-start-column="35" selection-end-line="3233" selection-end-column="35" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/crystal_toolkit/components/structure.py" />
     <entry file="file://$PROJECT_DIR$/intsitecomp.py" />
     <entry file="file://$PROJECT_DIR$/chgden_fetcher.py" />
@@ -333,23 +338,69 @@
         </state>
       </provider>
     </entry>
+    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/analysis/local_env.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-500">
+          <caret line="3546" selection-start-line="3546" selection-end-line="3546" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/networkx/algorithms/simple_paths.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="647">
+          <caret line="237" selection-start-line="237" selection-end-line="237" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/full_path_mapper.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="407" selection-start-line="407" selection-end-line="407" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/cath_scripts/cath_base.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="68">
+          <caret line="4" lean-forward="true" selection-start-line="4" selection-end-line="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/pprint.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="133">
+          <caret line="120" selection-start-line="120" selection-end-line="120" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/app.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="916">
-          <caret line="390" lean-forward="true" selection-start-line="390" selection-end-line="390" />
+        <state relative-caret-position="3417">
+          <caret line="213" selection-start-line="213" selection-end-line="213" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
-            <marker date="1561403182628" expanded="true" signature="10956:11159" ph="..." />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/get_migration_path.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1388">
+          <caret line="114" column="18" lean-forward="true" selection-start-line="114" selection-start-column="18" selection-end-line="114" selection-end-column="18" />
+          <folding>
+            <element signature="e#0#50#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fetch_path.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="272">
-          <caret line="16" column="18" selection-start-line="16" selection-start-column="18" selection-end-line="16" selection-end-column="18" />
+        <state relative-caret-position="1713">
+          <caret line="102" column="30" selection-start-line="102" selection-start-column="12" selection-end-line="102" selection-end-column="30" />
           <folding>
-            <marker date="1559853873161" expanded="true" signature="8989:10997" ph="..." />
+            <element signature="e#0#40#0" expanded="true" />
+            <marker date="1563310951014" expanded="true" signature="2179:2699" ph="..." />
+            <marker date="1563310951014" expanded="true" signature="6182:8190" ph="..." />
           </folding>
         </state>
       </provider>
