@@ -3,6 +3,7 @@ from crystal_toolkit.components.structure import StructureMoleculeComponent
 from pymatgen_diffusion.neb.full_path_mapper import ComputedEntryPath
 from matplotlib import pyplot as plt
 from maggma.stores import MongoStore
+from matplotlib.colors import Normalize
 from maggma.advanced_stores import MongograntStore
 from pymatgen.entries.computed_entries import ComputedStructureEntry
 from pymatgen.entries.compatibility import MaterialsProjectCompatibility
@@ -66,6 +67,8 @@ class fetch_path:
         self.cep = gmp_info[0]
         self.sgo = self.cep.s_graph
         self.ipos_epos_chg = gmp_info[1]
+        self.base_ent = gmp_info[2]
+        self.uv = gmp_info[3]
 
     def reduce_exp_sgo(self):
         self.exp_sgo = self.sgo * [2, 2, 2]  # get the expanded cell
@@ -114,6 +117,7 @@ class fetch_path:
     def lowest_chg_path(self, simple_paths):
         if simple_paths:
             hop_info = [self.sgo, self.ipos_epos_chg]
+            unique_hops = self.cep.unique_hops
             chg_list = []
             for one_path in simple_paths:
                 path = self.convert_one_path(one_path)
@@ -123,13 +127,12 @@ class fetch_path:
                     for hop_data in hop_info[1]:
                         fore_order = np.concatenate((hop_data[0], hop_data[1]), axis=0)
                         reverse_order = np.concatenate((hop_data[1], hop_data[0]), axis=0)
-                        print('step' ,step_coords)
-                        print('fore' ,fore_order)
-                        #print('reverse', reverse_order)
+                        print('step', step_coords)
+                        print('fore', fore_order)
                         if np.allclose(step_coords, fore_order) or np.allclose(step_coords, reverse_order):
                             step_chg = hop_data[2]
                             break
-                    path_chg += step_chg
+                    #path_chg += step_chg
                 chg_list.append(path_chg)
             print(chg_list)
             index = chg_list.index(min(chg_list))
@@ -143,9 +146,13 @@ class fetch_path:
         cep = self.cep
         base_ent = self.base_ent
         ipos_epos_chg = self.ipos_epos_chg
+        min_chg = min([entry[2] for entry in ipos_epos_chg])
+        max_chg = max([entry[2] for entry in ipos_epos_chg])
         uv = self.uv
-        cmap = self.cmap
-        norm=self.norm
+        colors = plt.get_cmap('tab10').colors
+        colors_hex = [rgb2hex(itr) for itr in colors]
+        cmap = plt.cm.YlOrRd
+        norm = Normalize(vmin=min_chg, vmax=max_chg)
         res_struct = base_ent.structure.copy()
         add_scene = []
         hop_colors = []

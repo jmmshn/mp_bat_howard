@@ -219,7 +219,7 @@ def get_path_graph(batt_id):
         hide_incomplete_bonds=True,
         bonded_sites_outside_unit_cell=False,
         scene_additions=add_scene)
-    return smc.all_layouts["struct"]
+    return smc.all_layouts['struct_layout']
 
 def get_df(query):
     if isinstance(query, str):
