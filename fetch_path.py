@@ -61,9 +61,9 @@ class fetch_path:
 
 
     def get_cep_info(self, battid):
-        grouped_entries = gmp.get_ent_from_db(elec, material, tasks, batt_id=battid, working_ion=self.w_ion, ltol=0.5, stol=0.7, angle_tol=5)
+        grouped_entries = gmp.get_ent_from_db(elec, material, tasks, batt_id=battid, working_ion=self.w_ion, ltol=0.2, stol=0.3, angle_tol=5)
         inserted_entries = [insert['inserted'][0] for insert in grouped_entries]
-        gmp_info = gmp.get_cep_from_group(grouped_entries[0]['base'], inserted_entries, working_ion=self.w_ion, tasks_store=tasks, material=material, ltol=0.5, stol=0.7, angle_tol=5)
+        gmp_info = gmp.get_cep_from_group(grouped_entries[0]['base'], inserted_entries, working_ion=self.w_ion, tasks_store=tasks, material=material, ltol=0.2, stol=0.3, angle_tol=5)
         self.cep = gmp_info[0]
         self.sgo = self.cep.s_graph
         self.ipos_epos_chg = gmp_info[1]
@@ -91,27 +91,40 @@ class fetch_path:
             if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
                 return n
 
-    def trace_index(self, exp_index):
-        coords = np.around(self.exp_sgo.structure.frac_coords[exp_index], 10)
+    def trace_index(self, exp_index=None, exp_coords=None):
+        if exp_index != None:
+            coords = np.around(self.exp_sgo.structure.frac_coords[exp_index], 8)
+        else: #elif isinstance(exp_coords, (tuple, list)):
+            coords = np.around(exp_coords, 8)
+
         ori_coords = (coords * 2) % 1
+        pos_in_ori_coords = coords * 2
         for n in range(0, len(self.sgo.structure.frac_coords)):
             if np.allclose(self.sgo.structure.frac_coords[n], ori_coords, rtol=0, atol=0.0002) == 1:
                 ori_index = n
         ori_image = (int(coords[0] * 2 // 1), int(coords[1] * 2 // 1), int(coords[2] * 2 // 1))
-        return ori_index, ori_coords, ori_image
+        return ori_index, ori_coords, ori_image, pos_in_ori_coords
 
     def convert_one_path(self, path_in_exp_index):
         converted_path = []
         for n in path_in_exp_index:
-            converted_one_step = self.trace_index(n)
+            converted_one_step = self.trace_index(exp_index=n)
             converted_path.append(converted_one_step)
         return converted_path
+
     def get_all_simple_paths(self):
         simple_paths = []
-        for ini_index in range(0, 2):
+        for ini_index in range(0, len(self.sgo.structure)):
             for direction in range(0, 3):
-                simple_paths.extend(
-                    list(nx.all_simple_paths(self.exp_sgo.graph, ini_index, self.find_next_index(ini_index, direction))))
+                if ini_index != None and self.find_next_index(ini_index, direction) != None:
+                    simple_paths.extend(
+                        list(nx.all_simple_paths(self.exp_sgo.graph, ini_index, self.find_next_index(ini_index, direction)))
+                    )
+        if simple_paths == []:
+            if len(self.cep.unique_hops) == 1:
+                exp_iindex = self.trace_index(exp_coords=self.cep.unique_hops[0].isite.frac_coords/2)
+                exp_eindex = self.trace_index(exp_coords=self.cep.unique_hops[0].esite.frac_coords/2)
+                simple_paths = [[exp_iindex[0], exp_eindex[0]]]
         return simple_paths
 
     def lowest_chg_path(self, simple_paths):
@@ -120,21 +133,35 @@ class fetch_path:
             unique_hops = self.cep.unique_hops
             chg_list = []
             for one_path in simple_paths:
-                path = self.convert_one_path(one_path)
+                path = []
+                path_index = []
+                for u in one_path:
+                    path.append(self.trace_index(exp_index=u)[3])
+                for v in one_path:
+                    path_index.append(self.trace_index(exp_index=v)[0])
                 path_chg = 0
                 for i in range(0, len(path) - 1):
-                    step_coords = np.concatenate((path[i][1], path[i + 1][1]), axis=0)
+                    step_chg = None
+                    step_coords = np.concatenate((path[i], path[i + 1]), axis=0)
                     for hop_data in hop_info[1]:
                         fore_order = np.concatenate((hop_data[0], hop_data[1]), axis=0)
                         reverse_order = np.concatenate((hop_data[1], hop_data[0]), axis=0)
-                        print('step', step_coords)
-                        print('fore', fore_order)
                         if np.allclose(step_coords, fore_order) or np.allclose(step_coords, reverse_order):
                             step_chg = hop_data[2]
                             break
-                    #path_chg += step_chg
+                    if step_chg == None:
+                        corr_ini_index = path_index[i]
+                        corr_end_index = path_index[i+1]
+                        corr_step_coords = np.concatenate((self.sgo.structure.frac_coords[corr_ini_index], self.sgo.structure.frac_coords[corr_end_index]), axis=0)
+                        for hop_data in hop_info[1]:
+                            fore_order = np.concatenate((hop_data[0], hop_data[1]), axis=0)
+                            reverse_order = np.concatenate((hop_data[1], hop_data[0]), axis=0)
+                            if np.allclose(corr_step_coords, fore_order) or np.allclose(corr_step_coords, reverse_order):
+                                step_chg = hop_data[2]
+                                break
+                    path_chg += step_chg
                 chg_list.append(path_chg)
-            print(chg_list)
+            print('list of path charge densities', chg_list)
             index = chg_list.index(min(chg_list))
             path_in_exp = simple_paths[index]
             return path_in_exp
@@ -198,6 +225,6 @@ class fetch_path:
         self.reduce_exp_sgo()
         all_simple_paths = self.get_all_simple_paths()
         exp_index_path = self.lowest_chg_path(all_simple_paths)
-        ori_index_path = [self.trace_index(i) for i in exp_index_path]
+        ori_index_path = [self.trace_index(exp_index=i) for i in exp_index_path]
         add_scene = self.get_add_scene(ori_index_path)
         return [exp_index_path, ori_index_path, add_scene]
