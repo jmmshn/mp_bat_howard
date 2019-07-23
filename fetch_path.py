@@ -21,7 +21,7 @@ from icecream import ic
 import warnings
 from pymatgen_diffusion.neb import get_migration_path as gmp
 
-with open('.:secrets:db_info.json') as json_file:
+with open('.db_info.json') as json_file:
     db_login = json.load(json_file)
 
 elec = MongoStore("js_cathodes", "concat_elec_basf",

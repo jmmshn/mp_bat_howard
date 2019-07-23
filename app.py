@@ -13,7 +13,7 @@ from fetch_path import fetch_path
 import warnings
 
 
-with open('.:secrets:db_info.json') as json_file:
+with open('.db_info.json') as json_file:
     db_login = json.load(json_file)
 client = MongoClient(
         db_login['host'],
