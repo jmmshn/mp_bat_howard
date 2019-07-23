@@ -85,11 +85,42 @@ class fetch_path:
         return self.exp_sgo
 
     def find_next_index(self, ini_index, direction):
-        fin_frac_coords = self.exp_sgo.structure.frac_coords[ini_index]
-        fin_frac_coords[direction] += 0.5
-        for n in range(0, len(self.exp_sgo.structure.frac_coords)):
-            if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
-                return n
+        #direction flag: 0=(1,0,0); 1=(0,1,0); 2=(0,0,1); 3=(1,1,0); 4=(1,0,1); 5=(0,1,1); 6=(1,1,1)
+        if direction < 3:
+            fin_frac_coords = self.exp_sgo.structure.frac_coords[ini_index]
+            fin_frac_coords[direction] += 0.5
+            for n in range(0, len(self.exp_sgo.structure.frac_coords)):
+                if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
+                    return n
+        elif direction == 3:
+            fin_frac_coords = self.exp_sgo.structure.frac_coords[ini_index]
+            fin_frac_coords[0] += 0.5
+            fin_frac_coords[1] += 0.5
+            for n in range(0, len(self.exp_sgo.structure.frac_coords)):
+                if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
+                    return n
+        elif direction == 4:
+            fin_frac_coords = self.exp_sgo.structure.frac_coords[ini_index]
+            fin_frac_coords[0] += 0.5
+            fin_frac_coords[2] += 0.5
+            for n in range(0, len(self.exp_sgo.structure.frac_coords)):
+                if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
+                    return n
+        elif direction == 5:
+            fin_frac_coords = self.exp_sgo.structure.frac_coords[ini_index]
+            fin_frac_coords[1] += 0.5
+            fin_frac_coords[2] += 0.5
+            for n in range(0, len(self.exp_sgo.structure.frac_coords)):
+                if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
+                    return n
+        elif direction == 6:
+            fin_frac_coords = self.exp_sgo.structure.frac_coords[ini_index]
+            fin_frac_coords[0] += 0.5
+            fin_frac_coords[1] += 0.5
+            fin_frac_coords[2] += 0.5
+            for n in range(0, len(self.exp_sgo.structure.frac_coords)):
+                if np.allclose(self.exp_sgo.structure.frac_coords[n], fin_frac_coords) == 1:
+                    return n
 
     def trace_index(self, exp_index=None, exp_coords=None):
         if exp_index != None:
@@ -115,7 +146,7 @@ class fetch_path:
     def get_all_simple_paths(self):
         simple_paths = []
         for ini_index in range(0, len(self.sgo.structure)):
-            for direction in range(0, 3):
+            for direction in range(0, 7):
                 if ini_index != None and self.find_next_index(ini_index, direction) != None:
                     simple_paths.extend(
                         list(nx.all_simple_paths(self.exp_sgo.graph, ini_index, self.find_next_index(ini_index, direction)))

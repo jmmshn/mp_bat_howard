@@ -112,7 +112,7 @@ def get_app_layout():
             [html.Div(children='Migration Path Graph')
         ], className='row'),
         html.Div(
-            [html.Div(get_path_graph('439_Li'), id='path-graph', style = {"width": "75vw", "height": "75vh"})
+            [html.Div(get_path_graph('11990_Li'), id='path-graph', style = {"width": "75vw", "height": "75vh"})
         ], className='row'),
         #ids should work: 12240_Li, 439_Li
         #tables and hidden divs
