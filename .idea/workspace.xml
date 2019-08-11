@@ -15,29 +15,29 @@
     <session id="-1112446447">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="43" />
+          <entry key="project.closed" value="44" />
           <entry key="project.open.time.0" value="1" />
           <entry key="project.open.time.1" value="3" />
           <entry key="project.open.time.10" value="1" />
           <entry key="project.open.time.4" value="3" />
           <entry key="project.open.time.5" value="18" />
-          <entry key="project.open.time.6" value="4" />
+          <entry key="project.open.time.6" value="6" />
           <entry key="project.open.time.7" value="7" />
           <entry key="project.open.time.8" value="2" />
           <entry key="project.open.time.9" value="4" />
-          <entry key="project.opened" value="43" />
+          <entry key="project.opened" value="45" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
         <counts>
           <entry key="json" value="1" />
-          <entry key="py" value="28" />
+          <entry key="py" value="29" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="JSON" value="1" />
-          <entry key="Python" value="27" />
+          <entry key="Python" value="28" />
           <entry key="Scratch" value="1" />
         </counts>
       </usages-collector>
@@ -45,13 +45,13 @@
         <counts>
           <entry key="Python Console" value="2" />
           <entry key="json" value="3" />
-          <entry key="py" value="12348" />
+          <entry key="py" value="12600" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="JSON" value="3" />
-          <entry key="Python" value="12350" />
+          <entry key="Python" value="12602" />
         </counts>
       </usages-collector>
     </session>
@@ -61,8 +61,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/app.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1938">
-              <caret line="114" column="43" selection-start-line="114" selection-start-column="43" selection-end-line="114" selection-end-column="43" />
+            <state relative-caret-position="959">
+              <caret line="115" column="9" selection-start-line="113" selection-start-column="8" selection-end-line="115" selection-end-column="9" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
               </folding>
@@ -71,14 +71,26 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/graph_path.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="223">
+              <caret line="42" column="38" selection-start-line="42" selection-start-column="38" selection-end-line="42" selection-end-column="38" />
+              <folding>
+                <element signature="e#0#22#0" expanded="true" />
+                <marker date="1565521413218" expanded="true" signature="1419:1424" ph="..." />
+                <marker date="1565521413218" expanded="true" signature="1419:1450" ph="..." />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/fetch_path.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="2142">
-              <caret line="161" selection-start-line="161" selection-end-line="161" />
+            <state>
+              <caret column="11" selection-start-column="11" selection-end-column="11" />
               <folding>
-                <element signature="e#0#40#0" expanded="true" />
-                <marker date="1563836712238" expanded="true" signature="2219:2805" ph="..." />
-                <marker date="1563836712238" expanded="true" signature="7943:10207" ph="..." />
+                <marker date="1563924435030" expanded="true" signature="9619:11883" ph="..." />
               </folding>
             </state>
           </provider>
@@ -87,11 +99,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/get_migration_path.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="583">
-              <caret line="272" column="34" selection-start-line="272" selection-start-column="34" selection-end-line="272" selection-end-column="34" />
-              <folding>
-                <element signature="e#0#50#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="3490">
+              <caret line="297" column="28" selection-start-line="297" selection-start-column="28" selection-end-line="297" selection-end-column="28" />
             </state>
           </provider>
         </entry>
@@ -154,6 +163,7 @@
         <option value="$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/get_migration_path.py" />
         <option value="$PROJECT_DIR$/fetch_path.py" />
         <option value="$PROJECT_DIR$/app.py" />
+        <option value="$PROJECT_DIR$/graph_path.py" />
       </list>
     </option>
   </component>
@@ -211,7 +221,7 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/app.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/graph_path.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -243,7 +253,7 @@
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32882884" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.2852853" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.2852853" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3993994" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -303,13 +313,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/.:secrets:db_info.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="4" column="23" selection-start-line="4" selection-start-column="23" selection-end-line="4" selection-end-column="23" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file://$PROJECT_DIR$/.:secrets:db_info.json" />
     <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/werkzeug/serving.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="142">
@@ -317,20 +321,8 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/core/sites.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="371">
-          <caret line="78" selection-start-line="78" selection-end-line="78" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/analysis/local_env.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-500">
-          <caret line="3546" selection-start-line="3546" selection-end-line="3546" />
-        </state>
-      </provider>
-    </entry>
+    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/core/sites.py" />
+    <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/pymatgen/analysis/local_env.py" />
     <entry file="file:///anaconda3/envs/pymg/lib/python3.6/site-packages/networkx/algorithms/simple_paths.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="647">
@@ -396,32 +388,39 @@
     </entry>
     <entry file="file://$USER_HOME$/uw/pymatgen-diffusion/pymatgen_diffusion/neb/get_migration_path.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="583">
-          <caret line="272" column="34" selection-start-line="272" selection-start-column="34" selection-end-line="272" selection-end-column="34" />
+        <state relative-caret-position="3490">
+          <caret line="297" column="28" selection-start-line="297" selection-start-column="28" selection-end-line="297" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fetch_path.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="11" selection-start-column="11" selection-end-column="11" />
           <folding>
-            <element signature="e#0#50#0" expanded="true" />
+            <marker date="1563924435030" expanded="true" signature="9619:11883" ph="..." />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/app.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1938">
-          <caret line="114" column="43" selection-start-line="114" selection-start-column="43" selection-end-line="114" selection-end-column="43" />
+        <state relative-caret-position="959">
+          <caret line="115" column="9" selection-start-line="113" selection-start-column="8" selection-end-line="115" selection-end-column="9" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/fetch_path.py">
+    <entry file="file://$PROJECT_DIR$/graph_path.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2142">
-          <caret line="161" selection-start-line="161" selection-end-line="161" />
+        <state relative-caret-position="223">
+          <caret line="42" column="38" selection-start-line="42" selection-start-column="38" selection-end-line="42" selection-end-column="38" />
           <folding>
-            <element signature="e#0#40#0" expanded="true" />
-            <marker date="1563836712238" expanded="true" signature="2219:2805" ph="..." />
-            <marker date="1563836712238" expanded="true" signature="7943:10207" ph="..." />
+            <element signature="e#0#22#0" expanded="true" />
+            <marker date="1565521413218" expanded="true" signature="1419:1424" ph="..." />
+            <marker date="1565521413218" expanded="true" signature="1419:1450" ph="..." />
           </folding>
         </state>
       </provider>

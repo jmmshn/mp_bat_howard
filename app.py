@@ -114,7 +114,7 @@ def get_app_layout():
         html.Div(
             [html.Div(get_path_graph('11990_Li'), id='path-graph', style = {"width": "75vw", "height": "75vh"})
         ], className='row'),
-        #ids should work: 12240_Li, 439_Li
+        #ids should work: 12240_Li, 439_Li, 11990_Li
         #tables and hidden divs
         html.Div([
             html.Div([
