@@ -45,13 +45,13 @@
         <counts>
           <entry key="Python Console" value="2" />
           <entry key="json" value="3" />
-          <entry key="py" value="12600" />
+          <entry key="py" value="12660" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="JSON" value="3" />
-          <entry key="Python" value="12602" />
+          <entry key="Python" value="12662" />
         </counts>
       </usages-collector>
     </session>
@@ -73,12 +73,12 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graph_path.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="223">
-              <caret line="42" column="38" selection-start-line="42" selection-start-column="38" selection-end-line="42" selection-end-column="38" />
+            <state relative-caret-position="833">
+              <caret line="49" column="15" selection-start-line="49" selection-start-column="15" selection-end-line="49" selection-end-column="15" />
               <folding>
                 <element signature="e#0#22#0" expanded="true" />
-                <marker date="1565521413218" expanded="true" signature="1419:1424" ph="..." />
-                <marker date="1565521413218" expanded="true" signature="1419:1450" ph="..." />
+                <marker date="1565521548967" expanded="true" signature="1535:1540" ph="..." />
+                <marker date="1565521548967" expanded="true" signature="1535:1566" ph="..." />
               </folding>
             </state>
           </provider>
@@ -248,12 +248,12 @@
     <frame x="0" y="23" width="1280" height="777" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.21770334" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.21770334" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32882884" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.2852853" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.2852853" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.3993994" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -415,12 +415,12 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graph_path.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="223">
-          <caret line="42" column="38" selection-start-line="42" selection-start-column="38" selection-end-line="42" selection-end-column="38" />
+        <state relative-caret-position="833">
+          <caret line="49" column="15" selection-start-line="49" selection-start-column="15" selection-end-line="49" selection-end-column="15" />
           <folding>
             <element signature="e#0#22#0" expanded="true" />
-            <marker date="1565521413218" expanded="true" signature="1419:1424" ph="..." />
-            <marker date="1565521413218" expanded="true" signature="1419:1450" ph="..." />
+            <marker date="1565521548967" expanded="true" signature="1535:1540" ph="..." />
+            <marker date="1565521548967" expanded="true" signature="1535:1566" ph="..." />
           </folding>
         </state>
       </provider>
