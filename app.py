@@ -24,13 +24,13 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 
-show_fields = ['batt_id', 'average_voltage', 'working_ion',
+show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
 
-query = {'working_ion' : {'$in': ['Ca', 'Mg']}}
+query = {'working_ion' : {'$in': ['Ca', 'Mg', 'Li']}}
 
 # Make a query to the specific DB and Collection
 cursor = mongo_coll.find(query, show_fields)
@@ -161,7 +161,7 @@ def draw_figure():
         go.Scatter(mode = 'markers',
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
-            text = dff['batt_id'],
+            text = dff['battid'],
             hoverinfo = 'text',
             marker = dict(
                 size = 10,
@@ -202,7 +202,7 @@ def draw_dropdown():
         id='chem_dropdown',
         multi=True,
         value=[STARTING_ID],
-        options=[{'label': i, 'value': i} for i in (df['batt_id']).tolist()])
+        options=[{'label': i, 'value': i} for i in (df['battid']).tolist()])
 
 
 #def draw_table():
