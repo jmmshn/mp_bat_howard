@@ -2,3 +2,5 @@
 app_examples/
 
 secrets/
+
+*.zip
