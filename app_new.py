@@ -115,6 +115,10 @@ table = dash_table.DataTable(
     id='table',
     page_size=10,
     page_action='native',
+    filter_action="native",
+    sort_action="native",
+    sort_mode="multi",
+    column_selectable="single",
     columns=[{
         "name": i,
         "id": i
