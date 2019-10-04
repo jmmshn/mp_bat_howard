@@ -12,7 +12,11 @@ import pandas as pd
 import os
 import re
 from copy import deepcopy
+import crystal_toolkit.components as ctc
+from pymatgen import MPRester
 
+
+## for testing
 PAGE_SIZE = 30
 
 app = dash.Dash(
@@ -118,7 +122,7 @@ table = dash_table.DataTable(
     filter_action="native",
     sort_action="native",
     sort_mode="multi",
-    column_selectable="single",
+    # column_selectable="single",
     columns=[{
         "name": i,
         "id": i
@@ -220,6 +224,14 @@ def generate_scatter_plot(scatter_data):
     return dict(data=data, layout=scatter_layout)
 
 
+def render_graph(batt_id):
+    ## for testing
+    struct = MPRester('cDK8JzdB4wFTJ6KACK').get_structure_by_material_id('mp-145')
+    #struct = cep.structure
+    component = ctc.StructureMoleculeComponent(struct, static=True)
+    return component.struct_layout
+
+
 ############################
 # Application layout
 ############################
@@ -238,9 +250,17 @@ app.layout = html.Div(
             ],
         ),
         html.Div(children=[query_information, scatter_plot], ),
+        html.Div(children='Migration Path'),
+        html.Div([
+            html.Div(children=render_graph('46085_Li'), id='path-graph',
+                style={'height': '300px', 'width': '600px', 'display':'inline-block'}),
+            html.Div(children='Placeholder',
+                style={'display':'inline-block'})]
+                    ),
         html.Div(children=[table_load], ),
         #### for debugging
         html.Div(id="query_show"),
+
     ],
 )
 ############################
