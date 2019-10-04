@@ -29,6 +29,7 @@ show_fields = ['battid', 'average_voltage', 'working_ion',
                'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
 
+query = {'working_ion' : {'$in': ['Ca', 'Mg', 'Li']}}
 
 app = dash.Dash(__name__, url_base_pathname='/vw/')
 app.config['suppress_callback_exceptions']=True
@@ -165,7 +166,6 @@ def draw_figure(df):
             x = dff['capacity_grav'],
             y = dff['average_voltage'],
             text = dff['battid'],
-            customdata = ['info'],
             hoverinfo = 'text',
             marker = dict(
                 size = 10,
