@@ -14,6 +14,8 @@ import re
 from copy import deepcopy
 import crystal_toolkit.components as ctc
 from pymatgen import MPRester
+from pymatgen.core.structure import Structure
+from migration_graph import migration_graph
 
 
 ## for testing
@@ -51,6 +53,16 @@ show_fields = ['battid', 'average_voltage', 'working_ion',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
+
+with open('./secrets/db_info_path.json') as json_file:
+    db_login_path = json.load(json_file)
+client_path = MongoClient(
+        db_login_path['host'],
+        username=db_login_path['username'],
+        password=db_login_path['password'],
+        authSource=db_login_path['database'],
+        authMechanism='SCRAM-SHA-1')
+mongo_coll_path = client_path[db_login_path['database']][db_login_path['collection']]
 
 #############################
 # Components
@@ -224,12 +236,27 @@ def generate_scatter_plot(scatter_data):
     return dict(data=data, layout=scatter_layout)
 
 
+#def render_graph(batt_id):
+#    ## for testing
+#    struct = MPRester('cDK8JzdB4wFTJ6KACK').get_structure_by_material_id('mp-145')
+#    #struct = cep.structure
+#    component = ctc.StructureMoleculeComponent(struct, static=True)
+#    return component.struct_layout
+
+
 def render_graph(batt_id):
-    ## for testing
-    struct = MPRester('cDK8JzdB4wFTJ6KACK').get_structure_by_material_id('mp-145')
-    #struct = cep.structure
-    component = ctc.StructureMoleculeComponent(struct, static=True)
-    return component.struct_layout
+    query_path = {'battid' : batt_id}
+    result = list(mongo_coll_path.find(query_path))
+    if result[0]['intercalating_paths']:
+        intercalating_paths = result[0]['intercalating_paths']
+        hops = result[0]['hops']
+        fss = Structure.from_dict(result[0]['full_sites_struct'])
+        bs = Structure.from_dict(result[0]['base_structure'])
+    else:
+        print('No intercalating path available')
+    graph_result = migration_graph(intercalating_paths, hops, fss, bs)
+    print('-----------------------------------', type(graph_result))
+    return graph_result
 
 
 ############################
@@ -252,7 +279,7 @@ app.layout = html.Div(
         html.Div(children=[query_information, scatter_plot], ),
         html.Div(children='Migration Path'),
         html.Div([
-            html.Div(children=render_graph('46085_Li'), id='path-graph',
+            html.Div(children=render_graph('65041_Li'), id='path-graph',
                 style={'height': '300px', 'width': '600px', 'display':'inline-block'}),
             html.Div(children='Placeholder',
                 style={'display':'inline-block'})]
