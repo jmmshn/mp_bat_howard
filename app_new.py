@@ -55,7 +55,15 @@ show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
-               'max_instability']
+               'max_instability', 'capacity_vol', 'energy_vol']
+info_fields = ['formula_discharge', 'average_voltage', 'capacity_grav', 'capacity_vol', 'energy_grav', 'energy_vol']
+name_change = {'formula_discharge': 'Formula',
+              'average_voltage': 'Average Voltage',
+              'capacity_grav': 'Gravimetric Capacity (mAh/g)',
+              'capacity_vol': 'Volumetric Capactiy (Ah/L)',
+              'energy_grav': 'Specific Energy (Wh/kg)',
+              'energy_vol': 'Energy Density (Wh/L)'}
+info_name = ['Formula', 'Average Voltage', 'Gravimetric Capacity (mAh/g)', 'Volumetric Capactiy (Ah/L)', 'Specific Energy (Wh/kg)', 'Energy Density (Wh/L)']
 
 
 #############################
@@ -119,7 +127,7 @@ scatter_plot = html.Div(
 table = dash_table.DataTable(
     style_header={
         "fontWeight": "bold",
-        "color": "inherit"
+        "color": "inherit"  
     },
     style_as_list_view=True,
     id='table',
@@ -132,7 +140,7 @@ table = dash_table.DataTable(
     columns=[{
         "name": i,
         "id": i
-    } for i in show_fields],
+    } for i in show_fields[0:10]],
     data=[],
     style_cell={
         "backgroundColor": "#1e2130",
@@ -183,6 +191,55 @@ query_information = html.Div(
     id="query-info",
     className="three columns",
     children=[select_working_ion],
+)
+
+property_table = dash_table.DataTable(
+    style_header={
+        "fontWeight": "bold",
+        "color": "inherit"  
+    },
+    style_as_list_view=True,
+    id='property_table',
+    page_size=6,
+    columns=[{
+        "name": i,
+        "id": i
+    } for i in info_name],
+    data=[],
+    style_cell={
+        "backgroundColor": "#1e2130",
+        "fontFamily": "Open Sans",
+        "padding": "0 2rem",
+        "color": "darkgray",
+        "border": "none",
+        'maxWidth': '140px',
+        'height': '50px',
+        'whiteSpace': 'normal',
+        'minWidth': '140px',
+        'width': '140px'
+    },
+    css=[
+        {
+            "selector": "tr:hover td",
+            "rule": "color: #91dfd2 !important;"
+        },
+        {
+            "selector": "td",
+            "rule": "border: none !important;"
+        },
+        {
+            "selector": ".dash-cell.focused",
+            "rule": "background-color: #1e2130 !important;",
+        },
+        {
+            "selector": "table",
+            "rule": "--accent: #1e2130;"
+        },
+        {
+            "selector": "tr",
+            "rule": "background-color: transparent"
+        },
+    ],
 )
 
 
@@ -266,12 +323,12 @@ app.layout = html.Div(
             ],
         ),
         html.Div(children=[query_information, scatter_plot], ),
-        html.Div(children='Migration Path'),
-        html.Div([
-            html.Div(children=[render_graph('65041_Li')], id='path-graph',
-                style={'height': '400px', 'width': '500px', 'display':'inline-block'}),
-            html.Div(children='Placeholder',
-                style={'display':'inline-block'})]
+        html.Div(children=[
+            html.Div(children=['Migration Path', render_graph('65041_Li')], id='path-graph', className='six columns',
+                style={'height': '400px', 'width': '400px'}),#, 'display':'inline-block'}),
+            html.Div(children=[property_table], className='six columns',
+                style={'display': 'inline-block'}
+                )]
                     ),
         html.Div(children=[table_load], ),
         #### for debugging
@@ -305,7 +362,7 @@ def update_callback(query):
               [Input('scatter_data', 'data')])
 def update_callback(data):
     filtered_data = dict()
-    for field_name in show_fields:
+    for field_name in show_fields[0:10]:
         filtered_data[field_name] = [cc[field_name] for cc in data]
     return generate_scatter_plot(filtered_data)
 
@@ -319,18 +376,37 @@ def update_callback(data):
         df[name_col]=df[name_col].map('{:0.2f}'.format)
     return df.to_dict('records')
 
+
 @app.callback(Output('path-graph', 'children'),
             [Input('voltage_vs_cap', 'selectedData'),
             Input('voltage_vs_cap', 'clickData')])
 def update_migration_path(selectedData, clickData):
     if selectedData:
-        text = selectedData['points'][0]['text']
-        regex = r'\d+_[\w]{2}'
-        graph_choice = re.findall(regex, text)[0]
+        graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][-1]['text'])[0]
         return render_graph(graph_choice)
     else:
         return render_graph('65041_Li')
         print('Nothing selected yet')
+
+
+@app.callback(Output('property_table', 'data'), 
+            [Input('scatter_data', 'data'),
+            Input('voltage_vs_cap', 'selectedData'),
+            Input('voltage_vs_cap', 'clickData')])
+def update_info_table(data, selectedData, clickData):
+    if selectedData:
+        df = pd.DataFrame(data)
+        for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'capacity_vol', 'energy_vol']:
+            df[name_col]=df[name_col].map('{:0.2f}'.format)
+        info_ids = []
+        for i in range(0, min(6, len(selectedData['points']))):
+            info_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][i]['text'])[0]
+            info_ids.append(info_choice)
+        info_dict = df[df['battid'].isin(info_ids)][info_fields].rename(columns=name_change).to_dict('record')
+        return info_dict
+    else:
+        return []
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
