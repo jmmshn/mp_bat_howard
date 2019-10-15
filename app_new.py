@@ -47,6 +47,9 @@ client = MongoClient(
         authSource=db_login['database'],
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
+mongo_coll_path = client[db_login['database']][db_login['collection2']]
+mongo_coll_task = client[db_login['database']][db_login['collection3']]
+mp_api = db_login['mp_api']
 
 show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
@@ -54,17 +57,6 @@ show_fields = ['battid', 'average_voltage', 'working_ion',
                'formula_discharge', 'id_charge', 'id_discharge',
                'max_instability']
 
-with open('./secrets/db_info_path.json') as json_file:
-    db_login_path = json.load(json_file)
-client_path = MongoClient(
-        db_login_path['host'],
-        username=db_login_path['username'],
-        password=db_login_path['password'],
-        authSource=db_login_path['database'],
-        authMechanism='SCRAM-SHA-1')
-mp_api = db_login_path['mp_api']
-mongo_coll_path = client_path[db_login_path['database']][db_login_path['collection']]
-mongo_coll_task = client_path[db_login_path['database']][db_login_path['collection2']]
 
 #############################
 # Components
@@ -237,12 +229,6 @@ def generate_scatter_plot(scatter_data):
     ]
     return dict(data=data, layout=scatter_layout)
 
-
-#def render_graph(batt_id):
-#    ## for testing
-#    struct = MPRester('cDK8JzdB4wFTJ6KACK').get_structure_by_material_id('mp-145')
-#    component = ctc.StructureMoleculeComponent(struct, static=True)
-#    return component.struct_layout
 
 
 def render_graph(batt_id):

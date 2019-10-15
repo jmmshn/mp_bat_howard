@@ -55,7 +55,8 @@ def last_point_info(hops, last_step):
     for one_hop in hops:
         if set([last_step[x] for x in ie]) == set([one_hop['iindex'], one_hop['eindex']]):
             if one_hop['to_jimage'] != [0,0,0]:
-                the_hop = one_hop
+                if one_hop['hop_label'] == last_step['hop_label']:
+                    the_hop = one_hop
     if last_step['isite'] == the_hop['iindex']:
         last_info = [last_step['isite'], last_step['esite'], tuple(the_hop['to_jimage'])]
     else:
