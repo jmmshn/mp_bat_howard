@@ -62,7 +62,9 @@ client_path = MongoClient(
         password=db_login_path['password'],
         authSource=db_login_path['database'],
         authMechanism='SCRAM-SHA-1')
+mp_api = db_login_path['mp_api']
 mongo_coll_path = client_path[db_login_path['database']][db_login_path['collection']]
+mongo_coll_task = client_path[db_login_path['database']][db_login_path['collection2']]
 
 #############################
 # Components
@@ -239,7 +241,6 @@ def generate_scatter_plot(scatter_data):
 #def render_graph(batt_id):
 #    ## for testing
 #    struct = MPRester('cDK8JzdB4wFTJ6KACK').get_structure_by_material_id('mp-145')
-#    #struct = cep.structure
 #    component = ctc.StructureMoleculeComponent(struct, static=True)
 #    return component.struct_layout
 
@@ -247,16 +248,18 @@ def generate_scatter_plot(scatter_data):
 def render_graph(batt_id):
     query_path = {'battid' : batt_id}
     result = list(mongo_coll_path.find(query_path))
-    if result[0]['intercalating_paths']:
+    if result and result[0]['intercalating_paths']:
         intercalating_paths = result[0]['intercalating_paths']
         hops = result[0]['hops']
         fss = Structure.from_dict(result[0]['full_sites_struct'])
         bs = Structure.from_dict(result[0]['base_structure'])
+        graph_result = migration_graph(intercalating_paths, hops, fss, bs)
     else:
         print('No intercalating path available')
-    graph_result = migration_graph(intercalating_paths, hops, fss, bs)
-    print('-----------------------------------', type(graph_result))
-    return graph_result
+        task_id = int(list(mongo_coll.find(query_path))[0]['id_discharge'])
+        delith_id = list(mongo_coll_task.find({'task_id' : task_id}))[0]['delith_id']
+        graph_result = ctc.StructureMoleculeComponent(MPRester(mp_api).get_structure_by_material_id(delith_id), static=True)
+    return graph_result.struct_layout
 
 
 ############################
@@ -279,8 +282,8 @@ app.layout = html.Div(
         html.Div(children=[query_information, scatter_plot], ),
         html.Div(children='Migration Path'),
         html.Div([
-            html.Div(children=render_graph('65041_Li'), id='path-graph',
-                style={'height': '300px', 'width': '600px', 'display':'inline-block'}),
+            html.Div(children=[render_graph('65041_Li')], id='path-graph',
+                style={'height': '400px', 'width': '500px', 'display':'inline-block'}),
             html.Div(children='Placeholder',
                 style={'display':'inline-block'})]
                     ),
@@ -299,7 +302,7 @@ app.layout = html.Div(
                      'data'), [Input('working_ion_select', 'value')],
               [State('master_query', 'data')])
 def update_callback(value, data):
-    print(value, data)
+    #print(value, data)
     query = data or {}
     query.update({'working_ion': {"$in": value}})
     return query
@@ -329,6 +332,19 @@ def update_callback(data):
     for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'max_instability']:
         df[name_col]=df[name_col].map('{:0.2f}'.format)
     return df.to_dict('records')
+
+@app.callback(Output('path-graph', 'children'),
+            [Input('voltage_vs_cap', 'selectedData'),
+            Input('voltage_vs_cap', 'clickData')])
+def update_migration_path(selectedData, clickData):
+    if selectedData:
+        text = selectedData['points'][0]['text']
+        regex = r'\d+_[\w]{2}'
+        graph_choice = re.findall(regex, text)[0]
+        return render_graph(graph_choice)
+    else:
+        return render_graph('65041_Li')
+        print('Nothing selected yet')
 
 if __name__ == "__main__":
     app.run_server(debug=True)

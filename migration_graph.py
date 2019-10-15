@@ -15,11 +15,11 @@ def migration_graph(intercalating_paths, hops, fss, bs):
     '''
     m_path, last_step = get_modified_path(intercalating_paths)
     last_info = last_point_info(hops, last_step)
-    last_jump = fss.lattice.get_cartesian_coords(fss.frac_coords[last_info[1]] + np.array(last_info[2]))
+    last_jump = fss.frac_coords[last_info[1]] + np.array(last_info[2] + np.array([-0.5, -0.5, -0.5]))
     pairs = get_pairs(m_path, fss, last_jump)
     extra_scene = get_extra_scene(pairs)
-    combined_scene = get_combined_scene(bs, extra_scene)
-    return combined_scene
+    smc = get_combined_scene(bs, extra_scene)
+    return smc
 
 
 def get_modified_path(intercalating_paths):
@@ -31,7 +31,9 @@ def get_modified_path(intercalating_paths):
 
     if set([path[0]['isite'], path[0]['esite']]) == set([path[1]['isite'], path[1]['esite']]):
         if path[1]['isite'] == path[0]['esite']:
-            m_path.append([[path[0]['isite'], path[0]['esite']], [path[1]['isite'], path[1]['esite']]])
+            m_path = [[path[0]['isite'], path[0]['esite']], [path[1]['isite'], path[1]['esite']]]
+        else:
+            m_path = [[path[0]['esite'], path[0]['isite']], [path[1]['isite'], path[1]['esite']]]
 
     else:
         start = list(set([path[0][x] for x in ie]) & set([path[-1][x] for x in ie]))[0]
@@ -52,8 +54,8 @@ def last_point_info(hops, last_step):
     ie = ['isite', 'esite']
     for one_hop in hops:
         if set([last_step[x] for x in ie]) == set([one_hop['iindex'], one_hop['eindex']]):
-            the_hop = one_hop
-            break
+            if one_hop['to_jimage'] != [0,0,0]:
+                the_hop = one_hop
     if last_step['isite'] == the_hop['iindex']:
         last_info = [last_step['isite'], last_step['esite'], tuple(the_hop['to_jimage'])]
     else:
@@ -63,12 +65,16 @@ def last_point_info(hops, last_step):
 
 
 def get_pairs(m_path, fss, last_jump):
-    pairs = []
+    frac_pairs = []
     for i in m_path:
-        one_pair = [fss.cart_coords[i[0]], fss.cart_coords[i[1]]]
-        pairs.append(one_pair)
-    pairs[-1][1] = last_jump
-    return pairs
+        one_pair = [fss.frac_coords[i[0]]+ np.array([-0.5, -0.5, -0.5]), fss.frac_coords[i[1]]+ np.array([-0.5, -0.5, -0.5])]
+        frac_pairs.append(one_pair)
+    frac_pairs[-1][1] = last_jump
+    cart_pairs = []
+    for one_frac_pair in frac_pairs:
+        one_cart_pair = [fss.lattice.get_cartesian_coords(u) for u in one_frac_pair]
+        cart_pairs.append(one_cart_pair)
+    return cart_pairs
 
 
 def get_extra_scene(pairs, s_radius=0.8, c_radius=0.4):
@@ -97,7 +103,5 @@ def get_extra_scene(pairs, s_radius=0.8, c_radius=0.4):
 
 
 def get_combined_scene(bs, extra_scene):
-    smc = StructureMoleculeComponent(bs)
-    ori_scene = smc.initial_graph.get_scene()
-    combined_scene = Scene(name='combine_scene', contents=[ori_scene, extra_scene])
-    return combined_scene
+    smc = StructureMoleculeComponent(bs, scene_additions=extra_scene)
+    return smc
