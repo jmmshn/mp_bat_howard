@@ -48,8 +48,7 @@ client = MongoClient(
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
 mongo_coll_path = client[db_login['database']][db_login['collection2']]
-mongo_coll_task = client[db_login['database']][db_login['collection3']]
-mp_api = db_login['mp_api']
+mongo_coll_mat = client[db_login['database']][db_login['collection3']]
 
 show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
@@ -321,9 +320,9 @@ def render_graph(batt_id):
         graph_result = migration_graph(intercalating_paths, hops, fss, bs)
     else:
         print('No intercalating path available')
-        task_id = int(list(mongo_coll.find(query_path))[0]['id_discharge'])
-        delith_id = list(mongo_coll_task.find({'task_id' : task_id}))[0]['delith_id']
-        graph_result = ctc.StructureMoleculeComponent(MPRester(mp_api).get_structure_by_material_id(delith_id), static=True)
+        id_discharge = int(list(mongo_coll.find(query_path))[0]['id_discharge'])
+        struct_dict = list(mongo_coll_mat.find({'task_id' : id_discharge}))[0]['structure']
+        graph_result = ctc.StructureMoleculeComponent(Structure.from_dict(struct_dict), static=True)
     return graph_result.struct_layout
 
 
@@ -336,6 +335,7 @@ app.layout = html.Div(
         # stores
         dcc.Store(id='master_query', storage_type='memory'),
         dcc.Store(id='scatter_data', storage_type='memory'),
+        dcc.Store(id='current_click', storage_type='memory'),
         html.Div(
             id="banner",
             className="banner",
@@ -405,15 +405,24 @@ def update_callback(data):
     return df.to_dict('records')
 
 
-@app.callback(Output('path-graph', 'children'),
+@app.callback([
+                Output('path-graph', 'children'),
+                Output('current_click', 'data')
+            ],
             [Input('voltage_vs_cap', 'selectedData'),
-            Input('voltage_vs_cap', 'clickData')])
-def update_migration_path(selectedData, clickData):
+            Input('voltage_vs_cap', 'clickData')],
+            [State('current_click', 'data')])
+def update_migration_path(selectedData, clickData, current_click):
     if selectedData:
-        graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][-1]['text'])[0]
-        return render_graph(graph_choice)
+        if clickData != current_click:
+            now_click = clickData
+            graph_choice = re.findall(r'\d+_[\w]{2}', clickData['points'][0]['text'])[0]
+        else:
+            now_click = current_click
+            graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][0]['text'])[0]
+        return render_graph(graph_choice), now_click
     else:
-        return render_graph('65041_Li')
+        return render_graph('65041_Li'), current_click
         print('Nothing selected yet')
 
 
