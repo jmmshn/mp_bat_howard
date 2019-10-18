@@ -87,6 +87,22 @@ select_working_ion= html.Div([
         html.H3(id='output')
     ])
 
+filter2= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Choose the working ion you are interested in",
+        ),
+        dcc.Dropdown(value=['Li'],
+                     options=[{
+                         'label': i,
+                         'value': i
+                     } for i in ['Li', 'Mg', 'Ca', 'Zn']],
+                     multi=True,
+                     id='filter2'),
+        html.H3(id='output2')
+    ])
+
 # Scatter plot
 scatter_layout = go.Layout(plot_bgcolor="#171b26",
                            paper_bgcolor="#171b26",
@@ -191,6 +207,12 @@ query_information = html.Div(
     id="query-info",
     className="three columns",
     children=[select_working_ion],
+)
+
+query_information2 = html.Div(
+    id='query-info2',
+    className='three columns',
+    children=[filter2]
 )
 
 property_table = dash_table.DataTable(
@@ -322,7 +344,13 @@ app.layout = html.Div(
                 html.Img(src=app.get_asset_url("plotly_logo_white.png")),
             ],
         ),
-        html.Div(children=[query_information, scatter_plot], ),
+        html.Div([
+            html.Div([
+                html.Div([html.Div([query_information])], style={'diplay': 'inline-block'}),
+                html.Div([html.Div([query_information2])], style={'diplay': 'inline-block'})
+                ]),
+            html.Div([scatter_plot])
+            ]),
         html.Div(children=[
             html.Div(children=['Migration Path', render_graph('65041_Li')], id='path-graph', className='six columns',
                 style={'height': '400px', 'width': '400px'}),#, 'display':'inline-block'}),
