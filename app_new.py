@@ -63,6 +63,10 @@ name_change = {'formula_discharge': 'Formula',
               'energy_grav': 'Specific Energy (Wh/kg)',
               'energy_vol': 'Energy Density (Wh/L)'}
 info_name = ['Formula', 'Average Voltage', 'Gravimetric Capacity (mAh/g)', 'Volumetric Capactiy (Ah/L)', 'Specific Energy (Wh/kg)', 'Energy Density (Wh/L)']
+all_element_list = list(mongo_coll.distinct('framework.elements'))
+element_select_list = all_element_list.copy()
+element_select_list.sort()
+element_select_list.insert(0, 'All Elements')
 
 
 #############################
@@ -86,19 +90,19 @@ select_working_ion= html.Div([
         html.H3(id='output')
     ])
 
-filter2= html.Div([
+element_select= html.Div([
         html.P(
             className="section-title",
             children=
-            "Choose the working ion you are interested in",
+            "Choose the element you are interested in",
         ),
-        dcc.Dropdown(value=['Li'],
+        dcc.Dropdown(value=['All Elements'],
                      options=[{
                          'label': i,
                          'value': i
-                     } for i in ['Li', 'Mg', 'Ca', 'Zn']],
+                     } for i in element_select_list],
                      multi=True,
-                     id='filter2'),
+                     id='element_select'),
         html.H3(id='output2')
     ])
 
@@ -118,7 +122,7 @@ scatter_layout = go.Layout(plot_bgcolor="#171b26",
                            hovermode='closest')
 
 scatter_plot = html.Div(
-    className="nine columns",
+    #className="eight columns",
     children=[
         html.Div(
             children=[
@@ -200,18 +204,6 @@ table_load = html.Div(
             ],
         ),
     ],
-)
-
-query_information = html.Div(
-    id="query-info",
-    className="three columns",
-    children=[select_working_ion],
-)
-
-query_information2 = html.Div(
-    id='query-info2',
-    className='three columns',
-    children=[filter2]
 )
 
 property_table = dash_table.DataTable(
@@ -345,11 +337,11 @@ app.layout = html.Div(
             ],
         ),
         html.Div([
-            html.Div([
-                html.Div([html.Div([query_information])], style={'diplay': 'inline-block'}),
-                html.Div([html.Div([query_information2])], style={'diplay': 'inline-block'})
+            html.Div(className='three columns',children=[
+                html.Div(children=[html.Div([select_working_ion])]),
+                html.Div(children=[html.Div([element_select])]),
                 ]),
-            html.Div([scatter_plot])
+            html.Div(className='nine columns', children=[scatter_plot])
             ]),
         html.Div(children=[
             html.Div(children=['Migration Path', render_graph('65041_Li')], id='path-graph', className='six columns',
@@ -369,13 +361,16 @@ app.layout = html.Div(
 ############################
 
 
-@app.callback(Output('master_query',
-                     'data'), [Input('working_ion_select', 'value')],
-              [State('master_query', 'data')])
-def update_callback(value, data):
-    #print(value, data)
+@app.callback(Output('master_query','data'), 
+            [Input('working_ion_select', 'value'),
+            Input('element_select', 'value')],
+            [State('master_query', 'data')])
+def update_callback(wi_value, e_value, data):
     query = data or {}
-    query.update({'working_ion': {"$in": value}})
+    if 'All Elements' in e_value:
+        e_value = all_element_list
+    print(e_value)
+    query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}]})
     return query
 
 
@@ -422,8 +417,8 @@ def update_migration_path(selectedData, clickData, current_click):
             graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][0]['text'])[0]
         return render_graph(graph_choice), now_click
     else:
-        return render_graph('65041_Li'), current_click
         print('Nothing selected yet')
+        return render_graph('65041_Li'), current_click
 
 
 @app.callback(Output('property_table', 'data'), 
