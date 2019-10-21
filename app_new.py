@@ -413,20 +413,24 @@ def update_callback(data):
                 Output('current_click', 'data')
             ],
             [Input('voltage_vs_cap', 'selectedData'),
-            Input('voltage_vs_cap', 'clickData')],
+            Input('voltage_vs_cap', 'clickData'),
+            Input('scatter_data', 'data')],
             [State('current_click', 'data')])
-def update_migration_path(selectedData, clickData, current_click):
-    if selectedData:
-        if clickData != current_click:
-            now_click = clickData
-            graph_choice = re.findall(r'\d+_[\w]{2}', clickData['points'][0]['text'])[0]
+def update_migration_path(selectedData, clickData, data, current_click):
+    if data:
+        if selectedData:
+            if clickData != current_click:
+                now_click = clickData
+                graph_choice = re.findall(r'\d+_[\w]{2}', clickData['points'][0]['text'])[0]
+            else:
+                now_click = current_click
+                graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][0]['text'])[0]
+            return render_graph(graph_choice), now_click
         else:
-            now_click = current_click
-            graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][0]['text'])[0]
-        return render_graph(graph_choice), now_click
+            print('Nothing selected yet')
+            return render_graph('65041_Li'), current_click
     else:
-        print('Nothing selected yet')
-        return render_graph('65041_Li'), current_click
+        return render_graph('65041_Li'), False
 
 
 @app.callback(Output('property_table', 'data'), 
@@ -434,8 +438,8 @@ def update_migration_path(selectedData, clickData, current_click):
             Input('voltage_vs_cap', 'selectedData'),
             Input('voltage_vs_cap', 'clickData')])
 def update_info_table(data, selectedData, clickData):
-    if selectedData:
-        if data:
+    if data:
+        if selectedData:
             df = pd.DataFrame(data)
             for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'capacity_vol', 'energy_vol']:
                 df[name_col]=df[name_col].map('{:0.2f}'.format)
@@ -445,6 +449,8 @@ def update_info_table(data, selectedData, clickData):
                 info_ids.append(info_choice)
             info_dict = df[df['battid'].isin(info_ids)][info_fields].rename(columns=name_change).to_dict('record')
             return info_dict
+        else:
+            return []
     else:
         return []
 
