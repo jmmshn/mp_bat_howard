@@ -132,6 +132,7 @@ scatter_plot = html.Div(
                         figure={
                             "data": [],
                             "layout": scatter_layout},
+                            style={'height': '800px'},
                     ),
                 )
             ],
@@ -225,11 +226,15 @@ property_table = dash_table.DataTable(
         "padding": "0 2rem",
         "color": "darkgray",
         "border": "none",
-        'maxWidth': '140px',
-        'height': '50px',
+        'maxWidth': '120px',
+        'height': '30px',
         'whiteSpace': 'normal',
-        'minWidth': '140px',
-        'width': '140px'
+        'minWidth': '65px',
+        #'width': '75px'
+        'overflow': 'hidden'
+    },
+    style_table={
+        'overflowX':'scroll'
     },
     css=[
         {
@@ -337,19 +342,23 @@ app.layout = html.Div(
             ],
         ),
         html.Div([
-            html.Div(className='three columns',children=[
+            html.Div(className='six columns', style={'height': '825px'},children=[
                 html.Div(children=[html.Div([select_working_ion])]),
                 html.Div(children=[html.Div([element_select])]),
+                html.Div(children=[
+                    html.Div(children=[render_graph('65041_Li')], id='path-graph',
+                    style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
+                    html.Div(style={'background-color':'#FFFFFF', 'height':'400px', 'width':'600px', 'z-index':'0', 'position':'relative'})
+                    ]),
+                html.Div(children=[property_table], className='twelve columns',
+                style={'display': 'inline-block'})
                 ]),
-            html.Div(className='nine columns', children=[scatter_plot])
+            html.Div(className='six columns', children=[scatter_plot])
             ]),
         html.Div(children=[
-            html.Div(children=['Migration Path', render_graph('65041_Li')], id='path-graph', className='six columns',
-                style={'height': '400px', 'width': '400px'}),#, 'display':'inline-block'}),
-            html.Div(children=[property_table], className='six columns',
-                style={'display': 'inline-block'}
-                )]
-                    ),
+            
+            
+                ]),
         html.Div(children=[table_load], ),
         #### for debugging
         html.Div(id="query_show"),
@@ -369,7 +378,6 @@ def update_callback(wi_value, e_value, data):
     query = data or {}
     if 'All Elements' in e_value:
         e_value = all_element_list
-    print(e_value)
     query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}]})
     return query
 
@@ -427,15 +435,16 @@ def update_migration_path(selectedData, clickData, current_click):
             Input('voltage_vs_cap', 'clickData')])
 def update_info_table(data, selectedData, clickData):
     if selectedData:
-        df = pd.DataFrame(data)
-        for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'capacity_vol', 'energy_vol']:
-            df[name_col]=df[name_col].map('{:0.2f}'.format)
-        info_ids = []
-        for i in range(0, min(6, len(selectedData['points']))):
-            info_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][i]['text'])[0]
-            info_ids.append(info_choice)
-        info_dict = df[df['battid'].isin(info_ids)][info_fields].rename(columns=name_change).to_dict('record')
-        return info_dict
+        if data:
+            df = pd.DataFrame(data)
+            for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'capacity_vol', 'energy_vol']:
+                df[name_col]=df[name_col].map('{:0.2f}'.format)
+            info_ids = []
+            for i in range(0, min(6, len(selectedData['points']))):
+                info_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][i]['text'])[0]
+                info_ids.append(info_choice)
+            info_dict = df[df['battid'].isin(info_ids)][info_fields].rename(columns=name_change).to_dict('record')
+            return info_dict
     else:
         return []
 
