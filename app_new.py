@@ -344,7 +344,7 @@ app.layout = html.Div(
         html.Div([
             html.Div(className='six columns', style={'height': '825px'},children=[
                 html.Div(children=[html.Div([select_working_ion])]),
-                html.Div(children=[html.Div([element_select])]),
+                html.Div(children=[html.Div([element_select])], style={'z-index':'2', 'position': 'relative'}),
                 html.Div(children=[
                     html.Div(children=[render_graph('65041_Li')], id='path-graph',
                     style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
