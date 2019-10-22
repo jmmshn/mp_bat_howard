@@ -1,20 +1,58 @@
-import dash, dash_auth
-from dash.dependencies import Input, Output, State
-import dash_html_components as html
+import dash
+import dash_table
+import dash_auth
 import dash_core_components as dcc
-import pandas as pd
-import numpy as np
-import json
+import dash_html_components as html
 import plotly.graph_objs as go
+import json
+import numpy as np
+from dash.dependencies import State, Input, Output
+from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
-import yaml
+import pandas as pd
+import os
+import re
+from copy import deepcopy
 import crystal_toolkit.components as ctc
-from fetch_path import fetch_path
-import warnings
+from pymatgen import MPRester
+from pymatgen.core.structure import Structure
+from migration_graph import migration_graph
 
 
-with open('.db_info.json') as json_file:
+
+## for testing
+PAGE_SIZE = 30
+
+app = dash.Dash(
+    __name__,
+    meta_tags=[{
+        "name":
+        "viewport",
+        "content":
+        "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no",
+    }],
+    url_base_pathname='/vw/',
+    assets_url_path='/vw'
+)
+server = app.server
+
+app.config["suppress_callback_exceptions"] = True
+
+#############################
+# Database connect
+#############################
+
+with open('./secrets/db_info.json') as json_file:
     db_login = json.load(json_file)
+# app_login 
+VALID_USR_PASS = {
+            db_login["dash_name"]: db_login["dash_pass"]
+}
+auth = dash_auth.BasicAuth(
+        app,
+        VALID_USR_PASS,
+        )
+# database login
 client = MongoClient(
         db_login['host'],
         username=db_login['username'],
@@ -22,462 +60,413 @@ client = MongoClient(
         authSource=db_login['database'],
         authMechanism='SCRAM-SHA-1')
 mongo_coll = client[db_login['database']][db_login['collection']]
+mongo_coll_path = client[db_login['database']][db_login['collection2']]
+mongo_coll_mat = client[db_login['database']][db_login['collection3']]
 
 show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
                'formula_charge',
                'formula_discharge', 'id_charge', 'id_discharge',
-               'max_instability']
-
-query = {'working_ion' : {'$in': ['Ca', 'Mg', 'Li']}}
-
-app = dash.Dash(__name__, url_base_pathname='/vw/')
-app.config['suppress_callback_exceptions']=True
-
-# Authentication
-VALID_UP = [
-    [db_login['dash_name'],  db_login['dash_pass']],
-]
-auth = dash_auth.BasicAuth(app, VALID_UP)
-
-server = app.server
-
-PAGE_SIZE = 20
-
-doris_dict = {  'position': 'relative',
-                'top': '0px',
-                'left': '10px',
-                'font-family': 'Dosis',
-                'display': 'inline',
-                'font-size': '6.0rem',
-                'color': '#4D637F'
-             }
+               'max_instability', 'capacity_vol', 'energy_vol']
+info_fields = ['formula_discharge', 'average_voltage', 'capacity_grav', 'capacity_vol', 'energy_grav', 'energy_vol']
+name_change = {'formula_discharge': 'Formula',
+              'average_voltage': 'Average Voltage',
+              'capacity_grav': 'Gravimetric Capacity (mAh/g)',
+              'capacity_vol': 'Volumetric Capactiy (Ah/L)',
+              'energy_grav': 'Specific Energy (Wh/kg)',
+              'energy_vol': 'Energy Density (Wh/L)'}
+info_name = ['Formula', 'Average Voltage', 'Gravimetric Capacity (mAh/g)', 'Volumetric Capactiy (Ah/L)', 'Specific Energy (Wh/kg)', 'Energy Density (Wh/L)']
+all_element_list = list(mongo_coll.distinct('framework.elements'))
+element_select_list = all_element_list.copy()
+element_select_list.sort()
+element_select_list.insert(0, 'All Elements')
 
 
+#############################
+# Components
+#############################
 
-# General formatting of the app
-def get_app_layout():
-    return html.Div([
-        # Row: Header and Intro text
-        html.Div([
-            html.Img(src="https://discuss.materialsproject.org/uploads/default/original/1X/a896ccafffcaac1a50c18818e0e3a2462423149e.png",
-                     style={
-                         'height': '150px',
-                         'float': 'right',
-                         'position': 'relative',
-                         'bottom': '40px',
-                         'left': '50px'
-                     },
-                     ),
-            html.H2('Dash ',
-                    style=doris_dict),
-            html.H2('for',
-                    style=doris_dict),
-            html.H2(' Battery Discovery',
-                    style=doris_dict),
-        ], className='row twelve columns', style={'position': 'relative', 'right': '15px'}),
-        # Row: Description
-        html.Div([
-            html.Div([
-                html.Div([
-                    html.Div([
-                        'Please Eneter Query Here:',
-                        dcc.Input(id='query_string', value='''{'working_ion' : {'$in': ['Li']}}''', type='text', size='30'),
-                        html.Button(id='query_button', n_clicks=0, children='Query'),
-                        html.Button(id='graph_button', n_clicks=0, children='Update/Clear Graph')
-                    ]),
-                    html.P(
-                        'HOVER over a point in the graph to see its basic information. CLICK on a point in the graph to display it in the table below.'),
-                    html.P(
-                        'The oxidation states predicted belows is a "best guess" bases on common oxidation state.')
-                ], style={'margin-left': '10px'}),
-                #draw_dropdown(),  # DROPDOWN  #####
-            ], className='twelve columns')
-        ], className='row'),
-        # Row: Figure
-        html.Div(
-            [html.Div(
-                style = {'alignVertical': 'center'},
-                id='mat_info',
-                children='PlaceHolder',
-                className='three columns'),
-            html.Div([
-                dcc.Graph(id='clickable-graph',
-                          style=dict(width='900px'),
-                          hoverData=dict(points=[dict(pointNumber=0)]),
-                          figure=draw_figure(get_df({'working_ion' : {'$in': ['Li']}}))),
-            ], className='nine  columns')
-        ], className='row'),
-        #Row: Path graph
-        html.Div(
-            [html.Div(children='Migration Path Graph')
-        ], className='row'),
-        html.Div(
-            [html.Div(get_path_graph('11990_Li'), id='path-graph', style = {"width": "75vw", "height": "75vh"})
-        ], className='row'),
-        #ids should work: 12240_Li, 439_Li, 11990_Li
-        #tables and hidden divs
-        html.Div([
-            html.Div([
-                html.Div(id = 'tab_selected', style={'display': 'none'}),
-                #html.Div(id = 'hidden-div'),
-                html.Div(id = 'hidden-div',
-                         #, style = {'display': 'none'}),
-                         ),
-                html.Div(id='hidden_df', children=get_df({'working_ion' : {'$in': ['Li']}}), style= {'display': 'none'}),
-                html.Div(id='current_selection',
-                         )
-            ], className='twelve columns')
-        ], className='row'),
-    ], className='container')
-
-
-html.Div(
-    id='df'
-)
-
-##########################################################################
-# The different dynamic elements in the app each writen as a function
-##########################################################################
-def draw_figure(df):
-    """
-    Return the figure data based on some filters
-    :param selected_idx:
-    :return:
-    """
-    dff = pd.read_json(df)
-    colors = ['rgb(67,67,67)', 'rgb(115,115,115)', 'rgb(49,130,189)', 'rgb(189,189,189)']
-    xx = np.linspace(1,1000,100)
-    yy_600 = 600/xx
-    yy_900 = 900/xx
-    data = [
-        #First layer is the selected data for halo effect
-        go.Scatter(mode = 'markers',
-                   x = [],
-                   y = [],
-                   hoverinfo = 'none',
-                   marker = dict(
-                       size = 15,
-                       #color='rgb(231, 99, 250)',
-                       color='rgb(0, 0, 0)'
-                   )
-                ),
-        go.Scatter(mode = 'markers',
-            x = dff['capacity_grav'],
-            y = dff['average_voltage'],
-            text = dff['battid'],
-            hoverinfo = 'text',
-            marker = dict(
-                size = 10,
-                color = dff['max_instability'],
-                cmax=0.2,
-                cmin=0,
-                colorscale='Viridis',
-                colorbar=dict(
-                    title='E<sub>Hull</sub>'
-                ),
-            )
+# Filters
+select_working_ion= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Choose the working ion you are interested in",
         ),
-        go.Scatter(mode = 'lines', hoverinfo='none',
-            x = xx,
-            y = yy_600, line=dict(color = colors[0], dash='dash')
-            ),
-        go.Scatter(mode = 'lines', hoverinfo='none',
-            x = xx,
-            y = yy_900, line=dict(color = colors[0], dash='dash'))
-    ]
+        dcc.Dropdown(value=['Li'],
+                     options=[{
+                         'label': i,
+                         'value': i
+                     } for i in ['Li', 'Mg', 'Ca', 'Zn']],
+                     multi=True,
+                     id='working_ion_select'),
+        html.H3(id='output')
+    ])
 
-    layout = go.Layout(
-        width = 700,
-        height = 700,
-        title = "Average Voltage vs. Capacity",
-        xaxis = dict(
-            range=[0,700],title='Gravimetric Capacity (mAh/g)'
+element_select= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Choose the element you are interested in",
         ),
-        yaxis = dict(
-            range=[0.9,5], title='Voltage (V)'
-        ),
-        showlegend=False,
-        hovermode = 'closest',
-    )
-    return dict(data=data, layout=layout)
+        dcc.Dropdown(value=['All Elements'],
+                     options=[{
+                         'label': i,
+                         'value': i
+                     } for i in element_select_list],
+                     multi=True,
+                     id='element_select'),
+        html.H3(id='output2')
+    ])
 
-def draw_dropdown():
-    return dcc.Dropdown(
-        id='chem_dropdown',
-        multi=True,
-        value=[STARTING_ID],
-        options=[{'label': i, 'value': i} for i in (df['battid']).tolist()])
+# Scatter plot
+scatter_layout = go.Layout(plot_bgcolor="#171b26",
+                           paper_bgcolor="#171b26",
+                           title="Average Voltage vs. Capacity",
+                           xaxis=dict(range=[0, 700],
+                                      title='Gravimetric Capacity (mAh/g)'),
+                           yaxis=dict(range=[0.9, 5], title='Voltage (V)'),
+                           height = 700,
+                           showlegend=False,
+                           clickmode="event+select",
+                           font=dict(family='Courier New, monospace',
+                                     size=20,
+                                     color='white'),
+                           hovermode='closest')
 
-def get_path_graph(batt_id):
-    path = fetch_path(batt_id)
-    path_info = path.get_primary_path_info()
-    add_scene = path_info[2]
-    base_ent = path.base_ent
-    smc = ctc.StructureMoleculeComponent(
-        base_ent.structure,
-        hide_incomplete_bonds=True,
-        bonded_sites_outside_unit_cell=False,
-        scene_additions=add_scene)
-    return smc.all_layouts['struct_layout']
-
-def get_df(query):
-    if isinstance(query, str):
-        query_dict = yaml.load(query, Loader=yaml.FullLoader)
-    elif isinstance(query, dict):
-        query_dict = query
-    cursor = mongo_coll.find(query_dict, show_fields)
-    up_df = pd.DataFrame(list(cursor))
-    if not up_df.empty:
-        red_df = up_df.drop(columns='_id')
-        return red_df.to_json()
-    else:
-        warnings.warn('Query had no results!')
-
-def draw_table(df, dataframe=pd.DataFrame(), max_rows=16):
-        if not dataframe.empty:
-            df_disp= df.iloc[dataframe['pointIndex'].values]
-            col_titles = ['Charged', 'Discharged', 'Stability (eV)',
-                          'Avg. Voltage (V)', 'Capacity (mAh/g)', 'Energy (mW/g)']
-            col_names = ['max_instability',
-                         'average_voltage', 'capacity_grav', 'energy_grav']
-
-            return html.Table(
-                # # Header
-                [html.Tr([html.Th(col) for col in col_titles])]+
-                [html.Tr(
-                    [html.Td(
-                        html.A(disp_variable(df_disp.iloc[i]['formula_charge']),
-                               href='https://materialsproject.org/materials/{}/'.format(
-                                   disp_variable(df_disp.iloc[i]['id_charge'])),
-                               target="_blank")
+scatter_plot = html.Div(
+    #className="eight columns",
+    children=[
+        html.Div(
+            children=[
+                dcc.Loading(
+                    children=dcc.Graph(
+                        id="voltage_vs_cap",
+                        figure={
+                            "data": [],
+                            "layout": scatter_layout},
+                            style={'height': '800px'},
                     ),
-                    html.Td(
-                        html.A(disp_variable(df_disp.iloc[i]['formula_discharge']),
-                               href='https://materialsproject.org/materials/{}/'.format(
-                                   disp_variable(df_disp.iloc[i]['id_discharge'])),
-                               target="_blank")
-                        )
-                    ]+
-                    [html.Td(disp_variable(df_disp.iloc[i][col])) for col in col_names]) for i in range(min(len(df_disp), max_rows))]
-            )
+                )
+            ],
+        ),
+    ],
+)
 
-##########################################################################
-#  Draw the initial app
-##########################################################################
+# Material info
 
-app.layout = get_app_layout()
 
-##########################################################################
-#  Useful functions
-##########################################################################
+# TODO Table select
+table = dash_table.DataTable(
+    style_header={
+        "fontWeight": "bold",
+        "color": "inherit"  
+    },
+    style_as_list_view=True,
+    id='table',
+    page_size=10,
+    page_action='native',
+    filter_action="native",
+    sort_action="native",
+    sort_mode="multi",
+    # column_selectable="single",
+    columns=[{
+        "name": i,
+        "id": i
+    } for i in show_fields[0:10]],
+    data=[],
+    style_cell={
+        "backgroundColor": "#1e2130",
+        "fontFamily": "Open Sans",
+        "padding": "0 2rem",
+        "color": "darkgray",
+        "border": "none",
+    },
+    css=[
+        {
+            "selector": "tr:hover td",
+            "rule": "color: #91dfd2 !important;"
+        },
+        {
+            "selector": "td",
+            "rule": "border: none !important;"
+        },
+        {
+            "selector": ".dash-cell.focused",
+            "rule": "background-color: #1e2130 !important;",
+        },
+        {
+            "selector": "table",
+            "rule": "--accent: #1e2130;"
+        },
+        {
+            "selector": "tr",
+            "rule": "background-color: transparent"
+        },
+    ],
+)
 
-def disp_variable(v):
-    if type(v) == float or isinstance(v, np.float32) or isinstance(v, np.float64):
-        return '{:0.2f}'.format(v)
+
+table_load = html.Div(
+    className="twelve columns",
+    children=[
+        html.Div(
+            children=[
+                dcc.Loading(
+                    children=table
+                )
+            ],
+        ),
+    ],
+)
+
+property_table = dash_table.DataTable(
+    style_header={
+        "fontWeight": "bold",
+        "color": "inherit"  
+    },
+    style_as_list_view=True,
+    id='property_table',
+    page_size=6,
+    columns=[{
+        "name": i,
+        "id": i
+    } for i in info_name],
+    data=[],
+    style_cell={
+        "backgroundColor": "#1e2130",
+        "fontFamily": "Open Sans",
+        "padding": "0 2rem",
+        "color": "darkgray",
+        "border": "none",
+        'maxWidth': '120px',
+        'height': '30px',
+        'whiteSpace': 'normal',
+        'minWidth': '65px',
+        #'width': '75px'
+        'overflow': 'hidden'
+    },
+    style_table={
+        'overflowX':'scroll'
+    },
+    css=[
+        {
+            "selector": "tr:hover td",
+            "rule": "color: #91dfd2 !important;"
+        },
+        {
+            "selector": "td",
+            "rule": "border: none !important;"
+        },
+        {
+            "selector": ".dash-cell.focused",
+            "rule": "background-color: #1e2130 !important;",
+        },
+        {
+            "selector": "table",
+            "rule": "--accent: #1e2130;"
+        },
+        {
+            "selector": "tr",
+            "rule": "background-color: transparent"
+        },
+    ],
+)
+
+
+# more complex function
+def generate_scatter_plot(scatter_data):
+    colors = [
+        'rgb(67,67,67)', 'rgb(115,115,115)', 'rgb(49,130,189)',
+        'rgb(189,189,189)'
+    ]
+    xx = np.linspace(1, 1000, 100)
+    yy_600 = 600 / xx
+    yy_900 = 900 / xx
+
+    hover_text = [
+        re.sub(r"([A-Za-z\(\)])([\d\.]+)", r"\1<sub>\2</sub>",
+               f"{bid}, {fc} -> {fd}") for bid, fc, fd in zip(
+                   scatter_data['battid'], scatter_data['formula_charge'],
+                   scatter_data['formula_discharge'])
+    ]
+    data = [
+        go.Scatter(mode='markers',
+                   x=scatter_data['capacity_grav'],
+                   y=scatter_data['average_voltage'],
+                   text=hover_text,
+                   hoverinfo='text',
+                   marker=dict(
+                       size=10,
+                       color=scatter_data['max_instability'],
+                       cmax=0.2,
+                       cmin=0,
+                       colorscale='Viridis',
+                       colorbar=dict(title='E<sub>Hull</sub>'),
+                   )),
+        go.Scatter(mode='lines',
+                   hoverinfo='none',
+                   x=xx,
+                   y=yy_600,
+                   line=dict(color=colors[1], dash='dash')),
+        go.Scatter(mode='lines',
+                   hoverinfo='none',
+                   x=xx,
+                   y=yy_900,
+                   line=dict(color=colors[1], dash='dash'))
+    ]
+    return dict(data=data, layout=scatter_layout)
+
+
+
+def render_graph(batt_id):
+    query_path = {'battid' : batt_id}
+    result = list(mongo_coll_path.find(query_path))
+    if result and result[0]['intercalating_paths']:
+        intercalating_paths = result[0]['intercalating_paths']
+        hops = result[0]['hops']
+        fss = Structure.from_dict(result[0]['full_sites_struct'])
+        bs = Structure.from_dict(result[0]['base_structure'])
+        graph_result = migration_graph(intercalating_paths, hops, fss, bs)
     else:
-        return v
-
-def sigfigsdict(d):
-    for k, v in d.items():
-        if type(v) == float:
-            d[k] = round(v, 2)
-    return d
-
-#def dfRowFromHover(hoverData):
-#    ''' Returns row for hover point as a Pandas Series '''
-#    if hoverData is not None:
-#        if 'points' in hoverData:
-#            firstPoint = hoverData['points'][0]
-#            if 'pointNumber' in firstPoint:
-#                point_number = firstPoint['pointNumber']
-#
-#                return df.iloc[point_number]
-#    return pd.Series()
-
-#callback functions
+        print('No intercalating path available')
+        id_discharge = int(list(mongo_coll.find(query_path))[0]['id_discharge'])
+        struct_dict = list(mongo_coll_mat.find({'task_id' : id_discharge}))[0]['structure']
+        graph_result = ctc.StructureMoleculeComponent(Structure.from_dict(struct_dict), static=True)
+    return graph_result.struct_layout
 
 
-#@app.callback(
-#    Output('mat_info', 'children'),
-#    [Input('clickable-graph', 'hoverData')]
-#)
-#def diplay_info(hoverData):
-#    if hoverData:
-#        hover_df = dfRowFromHover(hoverData)
-#        try:
-#            mineral_type = hover_df['mineral']['type']
-#        except:
-#            mineral_type = 'N/A'
-#        try:
-#            dimension = int(hover_df['dimensionality'])
-#        except:
-#            dimension = 'N/A'
-#        return [
-#            html.Div([
-#                "Charged: {}".format(hover_df['formula_charge']),
-#            ]),
-#            html.Div([
-#                "Discharged: {}".format(hover_df['formula_discharge']),
-#            ]),
-#            ]
-#    else:
-#        return None
+############################
+# Application layout
+############################
+app.layout = html.Div(
+    className="container scalable",
+    children=[
+        # stores
+        dcc.Store(id='master_query', storage_type='memory'),
+        dcc.Store(id='scatter_data', storage_type='memory'),
+        dcc.Store(id='current_click', storage_type='memory'),
+        html.Div(
+            id="banner",
+            className="banner",
+            children=[
+                html.H6("Matterials Project Battery Explorer"),
+                html.Img(src=app.get_asset_url("plotly_logo_white.png")),
+            ],
+        ),
+        html.Div([
+            html.Div(className='six columns', style={'height': '825px'},children=[
+                html.Div(children=[html.Div([select_working_ion])]),
+                html.Div(children=[html.Div([element_select])], style={'z-index':'2', 'position': 'relative'}),
+                html.Div(children=[
+                    html.Div(children=[render_graph('65041_Li')], id='path-graph',
+                    style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
+                    html.Div(style={'background-color':'#FFFFFF', 'height':'400px', 'width':'600px', 'z-index':'0', 'position':'relative'})
+                    ]),
+                html.Div(children=[property_table], className='twelve columns',
+                style={'display': 'inline-block'})
+                ]),
+            html.Div(className='six columns', children=[scatter_plot])
+            ]),
+        html.Div(children=[
+            
+            
+                ]),
+        html.Div(children=[table_load], ),
+        #### for debugging
+        html.Div(id="query_show"),
 
-@app.callback(
-    Output('current_selection', 'children'),
-    [Input('clickable-graph', 'clickData')]
+    ],
 )
-def update_current_selection(clickData):
-    if clickData:
-        return json.dumps(clickData)
+############################
+# callbacks
+############################
 
-@app.callback(
-    Output('hidden-div', 'children'),
-    [Input('clickable-graph', 'clickData')],
-    [State('hidden-div', 'children')
-     ]
-)
 
-def get_selected_data(clickData, hidden):
-    if clickData:
-        click = clickData['points'][0]
-        #print('prv', hidden)
-        if not hidden:
-            result_list = [click]
-            return json.dumps(result_list)
+@app.callback(Output('master_query','data'), 
+            [Input('working_ion_select', 'value'),
+            Input('element_select', 'value')],
+            [State('master_query', 'data')])
+def update_callback(wi_value, e_value, data):
+    query = data or {}
+    if 'All Elements' in e_value:
+        e_value = all_element_list
+    query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}]})
+    return query
 
-        if hidden:
-            result_list = json.loads(hidden)
-            if click in result_list:
-                # remove
-                result_list.remove(click)
+
+@app.callback(Output('scatter_data', 'data'), [Input('master_query', 'data')])
+def update_callback(query):
+    res_list = list(mongo_coll.find(query, show_fields))
+    [ii.pop('_id') for ii in res_list]
+    return res_list
+
+
+@app.callback(Output('voltage_vs_cap', 'figure'),
+              [Input('scatter_data', 'data')])
+def update_callback(data):
+    filtered_data = dict()
+    for field_name in show_fields[0:10]:
+        filtered_data[field_name] = [cc[field_name] for cc in data]
+    return generate_scatter_plot(filtered_data)
+
+
+@app.callback(Output('table', 'data'), [Input('scatter_data', 'data')])
+def update_callback(data):
+    df = pd.DataFrame(data)
+    if len(data) == 0:
+        return []
+    for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'max_instability']:
+        df[name_col]=df[name_col].map('{:0.2f}'.format)
+    return df.to_dict('records')
+
+
+@app.callback([
+                Output('path-graph', 'children'),
+                Output('current_click', 'data')
+            ],
+            [Input('voltage_vs_cap', 'selectedData'),
+            Input('voltage_vs_cap', 'clickData'),
+            Input('scatter_data', 'data')],
+            [State('current_click', 'data')])
+def update_migration_path(selectedData, clickData, data, current_click):
+    if data:
+        if selectedData:
+            if clickData != current_click:
+                now_click = clickData
+                graph_choice = re.findall(r'\d+_[\w]{2}', clickData['points'][0]['text'])[0]
             else:
-                #add
-                result_list.append(click)
-            return json.dumps(result_list)
-
-
-@app.callback(
-    Output('hidden_df', 'children'),
-    [Input('query_button', 'n_clicks')],
-    [State('query_string', 'value'),
-     State('hidden_df', 'children')]
-)
-def update_dataframe(n_clicks, query_string, hidden_df):
-    return get_df(query_string)
-
-@app.callback(
-    Output('clickable-graph', 'figure'),
-    [Input('clickable-graph', 'clickData'),
-    Input('graph_button', 'n_clicks')],
-    [State('clickable-graph', 'figure'),
-     State('hidden-div', 'children'),
-     State('hidden_df', 'children'),
-     ]
-)
-def update_figure(clickData, n_clicks, figure, hidden, df_string):
-    dataframe_json = df_string
-    dataframe = pd.read_json(dataframe_json)
-    new_figure = {}
-    new_figure['data'] = draw_figure(dataframe_json)['data']
-    new_figure['layout'] = draw_figure(dataframe_json)['layout']
-    new_figure['layout']['uirevision'] = df_string
-
-    if clickData:
-        click = clickData['points'][0]
-
-        if hidden:
-            table = json.loads(hidden)
-            # filter table so that only those in the current hidden_df get graphed
-            for element in table:
-                print(element)
-                if element['text'] not in dataframe['battid'].unique():
-                    table.remove(element)
+                now_click = current_click
+                graph_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][0]['text'])[0]
+            return render_graph(graph_choice), now_click
         else:
-            table=[]
-
-
-        if click not in table:
-            new_figure['layout']['shapes'] = [
-                {
-                'type': 'line',
-                'x0': click['x'] - 7,
-                'y0': click['y'],
-                'x1': click['x'] + 7,
-                'y1': click['y'],
-                'line': {
-                    'width': 3,
-                    'color': 'rgb(360, 360, 360)'
-                }
-            },
-                {
-                'type': 'line',
-                'x0': click['x'],
-                'y0': click['y'] + 0.05,
-                'x1': click['x'],
-                'y1': click['y'] + 0.05,
-                'line': {
-                    'width': 3,
-                    'color': 'rgb(360, 360, 360)'
-                },
-            },
-        ]
-            table.append(click)
-            for all_selected in table:
-                new_figure['data'][0]['x']+=tuple([all_selected['x']])
-                new_figure['data'][0]['y']+=tuple([all_selected['y']])
-
-        elif click in table:
-            print('cancelled click', click)
-            table.remove(click)
-            print(table)
-            for others in table:
-                new_figure['data'][0]['x']+=tuple([others['x']])
-                new_figure['data'][0]['y']+=tuple([others['y']])
-
+            print('Nothing selected yet')
+            return render_graph('65041_Li'), current_click
     else:
-        print('No clickData')
-    return new_figure
+        return render_graph('65041_Li'), False
 
 
-
-@app.callback(
-    Output('tab_selected', 'children'),
-    [Input('hidden-div', 'children')],
-    [State('hidden_df', 'children')]
-)
-def display_selected_data(points, df_string):
-    if points:
-        result = json.loads(points)
-        try:
-            df_tab = pd.DataFrame(result)
-        except:
-            return None
-        if result is not None:
-            #print(pd.DataFrame(result))
-            df = pd.read_json(df_string)
-            return draw_table(df, pd.DataFrame(result))
-
-#@app.callback(
-#    Output('path-graph', 'children'),
-#    [Input('clickable-graph', 'clickData')]
-#)
-#def graph_path(clickData):
-#    if clickData:
-#        selectionInfo = clickData['points'][0]
-#        battid = selectionInfo['text']
-#        return get_path_graph(battid)
+@app.callback(Output('property_table', 'data'), 
+            [Input('scatter_data', 'data'),
+            Input('voltage_vs_cap', 'selectedData'),
+            Input('voltage_vs_cap', 'clickData')])
+def update_info_table(data, selectedData, clickData):
+    if data:
+        if selectedData:
+            df = pd.DataFrame(data)
+            for name_col in ['average_voltage', 'capacity_grav', 'energy_grav', 'capacity_vol', 'energy_vol']:
+                df[name_col]=df[name_col].map('{:0.2f}'.format)
+            info_ids = []
+            for i in range(0, min(6, len(selectedData['points']))):
+                info_choice = re.findall(r'\d+_[\w]{2}', selectedData['points'][i]['text'])[0]
+                info_ids.append(info_choice)
+            info_dict = df[df['battid'].isin(info_ids)][info_fields].rename(columns=name_change).to_dict('record')
+            return info_dict
+        else:
+            return []
+    else:
+        return []
 
 
-external_css = [
-    "https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css",
-    "//fonts.googleapis.com/css?family=Dosis:Medium",
-    "https://cdn.rawgit.com/plotly/dash-app-stylesheets/0e463810ed36927caf20372b6411690692f94819/dash-drug-discovery-demo-stylesheet.css"]
-
-for css in external_css:
-    app.css.append_css({"external_url": css})
-
-
-if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8000)
+if __name__ == "__main__":
+    app.run_server(debug=True, port=8000)
