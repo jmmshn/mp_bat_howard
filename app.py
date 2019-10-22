@@ -22,6 +22,8 @@ from migration_graph import migration_graph
 
 ## for testing
 PAGE_SIZE = 30
+DEFAULT_CATION='Li'
+DEFAULT_STRUCT='65041_Li'
 
 app = dash.Dash(
     __name__,
@@ -31,8 +33,8 @@ app = dash.Dash(
         "content":
         "width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no",
     }],
-    url_base_pathname='/vw/',
-    assets_url_path='/vw'
+    url_base_pathname='/basf/',
+    assets_url_path='/basf'
 )
 server = app.server
 
@@ -93,7 +95,7 @@ select_working_ion= html.Div([
             children=
             "Choose the working ion you are interested in",
         ),
-        dcc.Dropdown(value=['Li'],
+        dcc.Dropdown(value=[DEFAULT_CATION],
                      options=[{
                          'label': i,
                          'value': i
@@ -359,7 +361,7 @@ app.layout = html.Div(
                 html.Div(children=[html.Div([select_working_ion])]),
                 html.Div(children=[html.Div([element_select])], style={'z-index':'2', 'position': 'relative'}),
                 html.Div(children=[
-                    html.Div(children=[render_graph('65041_Li')], id='path-graph',
+                    html.Div(children=[render_graph(DEFAULT_STRUCT)], id='path-graph',
                     style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
                     html.Div(style={'background-color':'#FFFFFF', 'height':'400px', 'width':'600px', 'z-index':'0', 'position':'relative'})
                     ]),
@@ -441,9 +443,9 @@ def update_migration_path(selectedData, clickData, data, current_click):
             return render_graph(graph_choice), now_click
         else:
             print('Nothing selected yet')
-            return render_graph('65041_Li'), current_click
+            return render_graph(DEFAULT_STRUCT), current_click
     else:
-        return render_graph('65041_Li'), False
+        return render_graph(DEFAULT_STRUCT), False
 
 
 @app.callback(Output('property_table', 'data'), 
