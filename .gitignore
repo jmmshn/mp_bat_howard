@@ -4,3 +4,4 @@ app_examples/
 secrets/
 
 *.zip
+app_old.py

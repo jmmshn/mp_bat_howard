@@ -78,7 +78,7 @@ def get_pairs(m_path, fss, last_jump):
     return cart_pairs
 
 
-def get_extra_scene(pairs, s_radius=0.5, c_radius=0.4):
+def get_extra_scene(pairs, s_radius=0.5, c_radius=2.5):
     '''
     Takes in position pairs and draw a path
     '''
@@ -99,7 +99,7 @@ def get_extra_scene(pairs, s_radius=0.5, c_radius=0.4):
     extra_scene.append(Spheres(positions=[pairs[0][0]], radius=s_radius, color='#00ff88')) #for now all colors are designated as Li light green
     for i in range(0, len(pairs)):
         extra_scene.append(Spheres(positions=[pairs[i][1]], radius=s_radius, color='#00ff88'))
-        extra_scene.append(Cylinders(positionPairs=[pairs[i]], radius=c_radius, color='black'))
+        extra_scene.append(Cylinders(positionPairs=[pairs[i]], radius=c_radius, color='#00ff88'))
     return extra_scene
 
 
