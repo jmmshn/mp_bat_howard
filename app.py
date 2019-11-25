@@ -64,6 +64,7 @@ client = MongoClient(
 mongo_coll = client[db_login['database']][db_login['collection']]
 mongo_coll_path = client[db_login['database']][db_login['collection2']]
 mongo_coll_mat = client[db_login['database']][db_login['collection3']]
+mongo_coll_task = client[db_login['database']][db_login['collection4']]
 
 show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
@@ -102,7 +103,6 @@ select_working_ion= html.Div([
                      } for i in ['Li', 'Mg', 'Ca', 'Zn']],
                      multi=True,
                      id='working_ion_select'),
-        html.H3(id='output')
     ])
 
 element_select= html.Div([
@@ -118,8 +118,19 @@ element_select= html.Div([
                      } for i in element_select_list],
                      multi=True,
                      id='element_select'),
-        html.H3(id='output2')
     ])
+
+id_formula_query= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Type in chemical formula or MP-id",
+        ),
+        html.Div([
+            dcc.Input(id='id_formula_query', type='text', style={'display':'inline-block'}),
+            html.Button(id='query_button', n_clicks=0, children='Query')],
+            ),
+    ], )
 
 # Scatter plot
 scatter_layout = go.Layout(plot_bgcolor="#171b26",
@@ -147,7 +158,7 @@ scatter_plot = html.Div(
                         figure={
                             "data": [],
                             "layout": scatter_layout},
-                            style={'height': '800px'},
+                            style={'height': '875px'},
                     ),
                 )
             ],
@@ -337,6 +348,18 @@ def render_graph(batt_id):
         graph_result = ctc.StructureMoleculeComponent(Structure.from_dict(struct_dict), static=True)
     return graph_result.struct_layout
 
+def extract_id_for_query(query_string):
+    if 'mp' in query_string:
+        return 0, re.findall(r'mp-[\d]*', query_string)
+    else:
+        return 1, [query_string]
+
+def id_for_update_dict(extract):
+    if extract[0] == 0:
+        task_id = [str(element['task_id']) for element in list(mongo_coll_task.find({'delith_id': {'$in': extract[1]}}))]
+        return {'material_ids': {'$in': task_id}}
+    else:
+        return{'formula_charge': {'$in': extract[1]}} 
 
 ############################
 # Application layout
@@ -357,9 +380,10 @@ app.layout = html.Div(
             ],
         ),
         html.Div([
-            html.Div(className='six columns', style={'height': '825px'},children=[
-                html.Div(children=[html.Div([select_working_ion])]),
-                html.Div(children=[html.Div([element_select])], style={'z-index':'2', 'position': 'relative'}),
+            html.Div(className='six columns', style={'height': '900px'},children=[
+                html.Div(children=[html.Div([select_working_ion], style={'z-index':'4', 'position': 'relative'})]),
+                html.Div(children=[html.Div([element_select])], style={'z-index':'3', 'position': 'relative'}),
+                html.Div(children=[html.Div([id_formula_query], style={'z-index':'2', 'position': 'relative'})]),
                 html.Div(children=[
                     html.Div(children=[render_graph(DEFAULT_STRUCT)], id='path-graph',
                     style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
@@ -387,13 +411,17 @@ app.layout = html.Div(
 
 @app.callback(Output('master_query','data'), 
             [Input('working_ion_select', 'value'),
-            Input('element_select', 'value')],
-            [State('master_query', 'data')])
-def update_callback(wi_value, e_value, data):
+            Input('element_select', 'value'),
+            Input('query_button', 'n_clicks')],
+            [State('master_query', 'data'),
+            State('id_formula_query', 'value')])
+def update_callback(wi_value, e_value, id_query_nclicks, data, id_query_value):
     query = data or {}
     if 'All Elements' in e_value:
         e_value = all_element_list
     query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}]})
+    if id_query_value:
+        query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}, id_for_update_dict(extract_id_for_query(id_query_value))]})
     return query
 
 
