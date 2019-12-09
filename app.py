@@ -17,6 +17,7 @@ import crystal_toolkit.components as ctc
 from pymatgen import MPRester
 from pymatgen.core.structure import Structure
 from migration_graph import migration_graph
+from pymatgen.core.composition import Composition
 
 
 
@@ -120,14 +121,14 @@ element_select= html.Div([
                      id='element_select'),
     ])
 
-id_formula_query= html.Div([
+formula_query= html.Div([
         html.P(
             className="section-title",
             children=
-            "Type in chemical formula or MP-id",
+            "Type in chemical formula",
         ),
         html.Div([
-            dcc.Input(id='id_formula_query', type='text', style={'display':'inline-block'}),
+            dcc.Input(id='formula_query', type='text', style={'display':'inline-block'}),
             html.Button(id='query_button', n_clicks=0, children='Query')],
             ),
     ], )
@@ -348,18 +349,30 @@ def render_graph(batt_id):
         graph_result = ctc.StructureMoleculeComponent(Structure.from_dict(struct_dict), static=True)
     return graph_result.struct_layout
 
-def extract_id_for_query(query_string):
-    if 'mp' in query_string:
-        return 0, re.findall(r'mp-[\d]*', query_string)
-    else:
-        return 1, [query_string]
+def formula_query_dict(query_string):
+    query_comp = Composition(query_string)
+    dd = query_comp.as_dict()
+    if "Li" in dd:
+        dd.pop('Li')
+    query_comp = Composition.from_dict(dd)
+    query_elements = [ielement.name for ielement in query_comp.elements]
+    query_regex = [f"(?=.*{query_elements[i]})" for i in range(len(query_elements))]
+    query_regex.append('.*')
+    query_regex = ''.join(query_regex)
+    form_list = mongo_coll.find({"formula_charge": {"$regex" : query_regex}}).distinct('formula_charge')
+    result_list = [*filter(lambda x : comp_comp(query_comp, Composition(x)), form_list)]
+    return {"formula_charge": {"$in": result_list}}
 
-def id_for_update_dict(extract):
-    if extract[0] == 0:
-        task_id = [str(element['task_id']) for element in list(mongo_coll_task.find({'delith_id': {'$in': extract[1]}}))]
-        return {'material_ids': {'$in': task_id}}
-    else:
-        return{'formula_charge': {'$in': extract[1]}} 
+def comp_comp(comp1, comp2):
+    dd = comp1.as_dict()
+    if "Li" in dd:
+        dd.pop('Li')
+    comp1_p = Composition.from_dict(dd)
+    dd = comp2.as_dict()
+    if "Li" in dd:
+        dd.pop('Li')
+    comp2_p = Composition.from_dict(dd)
+    return comp2_p.reduced_formula == comp1_p.reduced_formula
 
 ############################
 # Application layout
@@ -383,7 +396,7 @@ app.layout = html.Div(
             html.Div(className='six columns', style={'height': '900px'},children=[
                 html.Div(children=[html.Div([select_working_ion], style={'z-index':'4', 'position': 'relative'})]),
                 html.Div(children=[html.Div([element_select])], style={'z-index':'3', 'position': 'relative'}),
-                html.Div(children=[html.Div([id_formula_query], style={'z-index':'2', 'position': 'relative'})]),
+                html.Div(children=[html.Div([formula_query], style={'z-index':'2', 'position': 'relative'})]),
                 html.Div(children=[
                     html.Div(children=[render_graph(DEFAULT_STRUCT)], id='path-graph',
                     style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
@@ -414,14 +427,25 @@ app.layout = html.Div(
             Input('element_select', 'value'),
             Input('query_button', 'n_clicks')],
             [State('master_query', 'data'),
-            State('id_formula_query', 'value')])
-def update_callback(wi_value, e_value, id_query_nclicks, data, id_query_value):
+            State('formula_query', 'value')])
+def update_callback(wi_value, e_value, formula_query_nclicks, data, formula_query_value):
     query = data or {}
-    if 'All Elements' in e_value:
-        e_value = all_element_list
-    query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}]})
-    if id_query_value:
-        query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}, id_for_update_dict(extract_id_for_query(id_query_value))]})
+    update_list = []
+
+    if wi_value:
+        update_list.append({'working_ion': {"$in": wi_value}})
+
+    if e_value:
+        if 'All Elements' in e_value:
+            e_value = all_element_list
+            update_list.append({'framework.elements': {'$in': e_value}})
+        else:
+            update_list.append({'framework.elements': {'$in': e_value}})
+
+    if formula_query_value:
+        update_list.append(formula_query_dict(formula_query_value))
+
+    query.update({'$and': update_list})
     return query
 
 
