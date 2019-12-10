@@ -129,7 +129,19 @@ formula_query= html.Div([
         ),
         html.Div([
             dcc.Input(id='formula_query', type='text', style={'display':'inline-block'}),
-            html.Button(id='query_button', n_clicks=0, children='Query')],
+            html.Button(id='query_button_formula', n_clicks=0, children='Query')],
+            ),
+    ], )
+
+json_query= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Type in standard json query",
+        ),
+        html.Div([
+            dcc.Input(id='json_query', type='text', style={'display':'inline-block'}),
+            html.Button(id='query_button_json', n_clicks=0, children='Query')],
             ),
     ], )
 
@@ -351,27 +363,27 @@ def render_graph(batt_id):
 
 def formula_query_dict(query_string):
     query_comp = Composition(query_string)
-    dd = query_comp.as_dict()
-    if "Li" in dd:
-        dd.pop('Li')
-    query_comp = Composition.from_dict(dd)
+    comp_dict = query_comp.as_dict()
+    if 'Li' in comp_dict:
+        comp_dict.pop('Li')
+    query_comp = Composition.from_dict(comp_dict)
     query_elements = [ielement.name for ielement in query_comp.elements]
     query_regex = [f"(?=.*{query_elements[i]})" for i in range(len(query_elements))]
     query_regex.append('.*')
     query_regex = ''.join(query_regex)
-    form_list = mongo_coll.find({"formula_charge": {"$regex" : query_regex}}).distinct('formula_charge')
+    form_list = mongo_coll.find({"formula_charge": {"$regex" : query_regex}}).distinct("formula_charge")
     result_list = [*filter(lambda x : comp_comp(query_comp, Composition(x)), form_list)]
     return {"formula_charge": {"$in": result_list}}
 
 def comp_comp(comp1, comp2):
-    dd = comp1.as_dict()
-    if "Li" in dd:
-        dd.pop('Li')
-    comp1_p = Composition.from_dict(dd)
-    dd = comp2.as_dict()
-    if "Li" in dd:
-        dd.pop('Li')
-    comp2_p = Composition.from_dict(dd)
+    comp_dict_1 = comp1.as_dict()
+    if 'Li' in comp_dict_1:
+        comp_dict_1.pop('Li')
+    comp1_p = Composition.from_dict(comp_dict_1)
+    comp_dict_2 = comp2.as_dict()
+    if 'Li' in comp_dict_2:
+        comp_dict_2.pop('Li')
+    comp2_p = Composition.from_dict(comp_dict_2)
     return comp2_p.reduced_formula == comp1_p.reduced_formula
 
 ############################
@@ -394,9 +406,10 @@ app.layout = html.Div(
         ),
         html.Div([
             html.Div(className='six columns', style={'height': '900px'},children=[
-                html.Div(children=[html.Div([select_working_ion], style={'z-index':'4', 'position': 'relative'})]),
-                html.Div(children=[html.Div([element_select])], style={'z-index':'3', 'position': 'relative'}),
-                html.Div(children=[html.Div([formula_query], style={'z-index':'2', 'position': 'relative'})]),
+                html.Div(children=[html.Div([select_working_ion], style={'z-index':'5', 'position': 'relative'})]),
+                html.Div(children=[html.Div([element_select])], style={'z-index':'4', 'position': 'relative'}),
+                html.Div(children=[html.Div([formula_query], style={'z-index':'3', 'position': 'relative'})]),
+                html.Div(children=[html.Div([json_query], style={'z-index':'2', 'position': 'relative'})]),
                 html.Div(children=[
                     html.Div(children=[render_graph(DEFAULT_STRUCT)], id='path-graph',
                     style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
@@ -425,27 +438,32 @@ app.layout = html.Div(
 @app.callback(Output('master_query','data'), 
             [Input('working_ion_select', 'value'),
             Input('element_select', 'value'),
-            Input('query_button', 'n_clicks')],
+            Input('query_button_formula', 'n_clicks'),
+            Input('query_button_json', 'n_clicks')],
             [State('master_query', 'data'),
-            State('formula_query', 'value')])
-def update_callback(wi_value, e_value, formula_query_nclicks, data, formula_query_value):
+            State('formula_query', 'value'),
+            State('json_query', 'value')])
+def update_callback(wi_value, e_value, formula_query_nclicks, json_query_nclicks, data, formula_query_value, json_query_value):
     query = data or {}
     update_list = []
 
     if wi_value:
-        update_list.append({'working_ion': {"$in": wi_value}})
+        update_list.append({"working_ion": {"$in": wi_value}})
 
     if e_value:
         if 'All Elements' in e_value:
             e_value = all_element_list
-            update_list.append({'framework.elements': {'$in': e_value}})
+            update_list.append({"framework.elements": {"$in": e_value}})
         else:
-            update_list.append({'framework.elements': {'$in': e_value}})
+            update_list.append({"framework.elements": {"$in": e_value}})
 
-    if formula_query_value:
+    if formula_query_nclicks and formula_query_value:
         update_list.append(formula_query_dict(formula_query_value))
 
-    query.update({'$and': update_list})
+    if json_query_nclicks and json_query_value:
+        update_list.append(eval(json_query_value))
+    
+    query.update({"$and": update_list})
     return query
 
 
