@@ -17,6 +17,7 @@ import crystal_toolkit.components as ctc
 from pymatgen import MPRester
 from pymatgen.core.structure import Structure
 from migration_graph import migration_graph
+from pymatgen.core.composition import Composition
 
 
 
@@ -64,6 +65,7 @@ client = MongoClient(
 mongo_coll = client[db_login['database']][db_login['collection']]
 mongo_coll_path = client[db_login['database']][db_login['collection2']]
 mongo_coll_mat = client[db_login['database']][db_login['collection3']]
+mongo_coll_task = client[db_login['database']][db_login['collection4']]
 
 show_fields = ['battid', 'average_voltage', 'working_ion',
                'capacity_grav', 'energy_grav',
@@ -102,7 +104,6 @@ select_working_ion= html.Div([
                      } for i in ['Li', 'Mg', 'Ca', 'Zn']],
                      multi=True,
                      id='working_ion_select'),
-        html.H3(id='output')
     ])
 
 element_select= html.Div([
@@ -118,8 +119,31 @@ element_select= html.Div([
                      } for i in element_select_list],
                      multi=True,
                      id='element_select'),
-        html.H3(id='output2')
     ])
+
+formula_query= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Type in chemical formula",
+        ),
+        html.Div([
+            dcc.Input(id='formula_query', type='text', style={'display':'inline-block'}),
+            html.Button(id='query_button_formula', n_clicks=0, children='Query')],
+            ),
+    ], )
+
+json_query= html.Div([
+        html.P(
+            className="section-title",
+            children=
+            "Type in standard json query",
+        ),
+        html.Div([
+            dcc.Input(id='json_query', type='text', style={'display':'inline-block'}),
+            html.Button(id='query_button_json', n_clicks=0, children='Query')],
+            ),
+    ], )
 
 # Scatter plot
 scatter_layout = go.Layout(plot_bgcolor="#171b26",
@@ -147,7 +171,7 @@ scatter_plot = html.Div(
                         figure={
                             "data": [],
                             "layout": scatter_layout},
-                            style={'height': '800px'},
+                            style={'height': '875px'},
                     ),
                 )
             ],
@@ -337,6 +361,30 @@ def render_graph(batt_id):
         graph_result = ctc.StructureMoleculeComponent(Structure.from_dict(struct_dict), static=True)
     return graph_result.struct_layout
 
+def formula_query_dict(query_string):
+    query_comp = Composition(query_string)
+    comp_dict = query_comp.as_dict()
+    if 'Li' in comp_dict:
+        comp_dict.pop('Li')
+    query_comp = Composition.from_dict(comp_dict)
+    query_elements = [ielement.name for ielement in query_comp.elements]
+    query_regex = [f"(?=.*{query_elements[i]})" for i in range(len(query_elements))]
+    query_regex.append('.*')
+    query_regex = ''.join(query_regex)
+    form_list = mongo_coll.find({"formula_charge": {"$regex" : query_regex}}).distinct("formula_charge")
+    result_list = [*filter(lambda x : comp_comp(query_comp, Composition(x)), form_list)]
+    return {"formula_charge": {"$in": result_list}}
+
+def comp_comp(comp1, comp2):
+    comp_dict_1 = comp1.as_dict()
+    if 'Li' in comp_dict_1:
+        comp_dict_1.pop('Li')
+    comp1_p = Composition.from_dict(comp_dict_1)
+    comp_dict_2 = comp2.as_dict()
+    if 'Li' in comp_dict_2:
+        comp_dict_2.pop('Li')
+    comp2_p = Composition.from_dict(comp_dict_2)
+    return comp2_p.reduced_formula == comp1_p.reduced_formula
 
 ############################
 # Application layout
@@ -357,9 +405,11 @@ app.layout = html.Div(
             ],
         ),
         html.Div([
-            html.Div(className='six columns', style={'height': '825px'},children=[
-                html.Div(children=[html.Div([select_working_ion])]),
-                html.Div(children=[html.Div([element_select])], style={'z-index':'2', 'position': 'relative'}),
+            html.Div(className='six columns', style={'height': '900px'},children=[
+                html.Div(children=[html.Div([select_working_ion], style={'z-index':'5', 'position': 'relative'})]),
+                html.Div(children=[html.Div([element_select])], style={'z-index':'4', 'position': 'relative'}),
+                html.Div(children=[html.Div([formula_query], style={'z-index':'3', 'position': 'relative'})]),
+                html.Div(children=[html.Div([json_query], style={'z-index':'2', 'position': 'relative'})]),
                 html.Div(children=[
                     html.Div(children=[render_graph(DEFAULT_STRUCT)], id='path-graph',
                     style={'height': '400px', 'width': '600px', 'z-index':'1', 'position': 'absolute'}),
@@ -387,13 +437,37 @@ app.layout = html.Div(
 
 @app.callback(Output('master_query','data'), 
             [Input('working_ion_select', 'value'),
-            Input('element_select', 'value')],
-            [State('master_query', 'data')])
-def update_callback(wi_value, e_value, data):
+            Input('element_select', 'value'),
+            Input('query_button_formula', 'n_clicks'),
+            Input('query_button_json', 'n_clicks')],
+            [State('master_query', 'data'),
+            State('formula_query', 'value'),
+            State('json_query', 'value')])
+def update_callback(wi_value, e_value, formula_query_nclicks, json_query_nclicks, data, formula_query_value, json_query_value):
     query = data or {}
-    if 'All Elements' in e_value:
-        e_value = all_element_list
-    query.update({'$and': [{'working_ion': {"$in": wi_value}}, {'framework.elements': {'$in': e_value}}]})
+    update_list = []
+
+    #working_ion query
+    if wi_value:
+        update_list.append({"working_ion": {"$in": wi_value}})
+
+    #element query
+    if e_value: 
+        if 'All Elements' in e_value:
+            e_value = all_element_list
+            update_list.append({"framework.elements": {"$in": e_value}})
+        else:
+            update_list.append({"framework.elements": {"$in": e_value}})
+
+    #chemical formula query
+    if formula_query_nclicks and formula_query_value:
+        update_list.append(formula_query_dict(formula_query_value))
+
+    #standard json query
+    if json_query_nclicks and json_query_value:
+        update_list.append(eval(json_query_value))
+    
+    query.update({"$and": update_list})
     return query
 
 
