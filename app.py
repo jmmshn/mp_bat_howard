@@ -447,19 +447,23 @@ def update_callback(wi_value, e_value, formula_query_nclicks, json_query_nclicks
     query = data or {}
     update_list = []
 
+    #working_ion query
     if wi_value:
         update_list.append({"working_ion": {"$in": wi_value}})
 
-    if e_value:
+    #element query
+    if e_value: 
         if 'All Elements' in e_value:
             e_value = all_element_list
             update_list.append({"framework.elements": {"$in": e_value}})
         else:
             update_list.append({"framework.elements": {"$in": e_value}})
 
+    #chemical formula query
     if formula_query_nclicks and formula_query_value:
         update_list.append(formula_query_dict(formula_query_value))
 
+    #standard json query
     if json_query_nclicks and json_query_value:
         update_list.append(eval(json_query_value))
     
