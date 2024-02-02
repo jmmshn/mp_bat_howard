@@ -1,5 +1,5 @@
 # This file may be used to create an environment using:
-dash==0.35.1
+dash==2.15.0
 dash-html-components==0.13.4
 dash-core-components==0.42.1
 dash-renderer==0.16.1
