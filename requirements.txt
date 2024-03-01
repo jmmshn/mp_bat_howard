@@ -1,7 +1,7 @@
 # This file may be used to create an environment using:
 dash==0.35.1
 dash-html-components==0.13.4
-dash-core-components==0.42.1
+dash-core-components==2.0.0
 dash-renderer==0.16.1
 plotly==2.0.15
 numpy==1.16.0
